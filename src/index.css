@@ -1,0 +1,79 @@
+/* Variables globales, reset y animaciones — sin clases de componente */
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --brand-1: #ff6200;
+  --brand-2: #ffb300;
+  --brand-3: #ffe0cc;
+  --brand-4: #ffefe5;
+
+  --white: #fff;
+  --gray-1: #1a1a1a;
+  --gray-2: #333;
+  --gray-3: #555;
+  --gray-4: #888;
+  --gray-5: #bbb;
+  --gray-6: #ddd;
+  --gray-7: #eee;
+  --gray-8: #f7f7f7;
+
+  --color-text-1: var(--gray-1);
+  --color-text-2: var(--gray-3);
+  --color-text-3: var(--gray-4);
+  --color-fill-1: var(--white);
+  --color-fill-2: var(--gray-8);
+  --color-line-2: var(--gray-6);
+
+  --app-bg:    var(--color-fill-2);
+  --navbar-bg: var(--white);
+  --footer-bg: var(--white);
+
+  --gutter: 12px;
+  --rate-width: 32px;
+  --msg-avatar-gap: 6px;
+  --msg-gutter: calc(var(--msg-avatar-gap) + var(--rate-width));
+
+  --radius-sm: 6px;
+  --radius-md: 10px;
+
+  --shadow-1: 0 3px 4px rgba(0,0,0,.04);
+  --shadow-2: 0 4px 8px rgba(0,0,0,.08);
+
+  --navbar-height: 44px;
+  --safe-top: 0px;
+  --safe-bottom: 0px;
+}
+
+:root[data-color-scheme="dark"] {
+  --white:     #1c222e;
+  --gray-1:    #f3f6f8;
+  --app-bg:    #0e1119;
+  --navbar-bg: #0e1119;
+  --footer-bg: #0e1119;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: 14px;
+  color: var(--color-text-1);
+  background: var(--app-bg);
+  height: 100vh;
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+#root { height: 100vh; display: flex; flex-direction: column; }
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translate3d(0, 16px, 0); }
+  to   { opacity: 1; transform: translate3d(0, 0, 0); }
+}
+@keyframes typingDot {
+  0%, 60%, 100% { transform: translateY(0);   opacity: .4; }
+  30%           { transform: translateY(-5px); opacity: 1;  }
+}
+@keyframes sendIn {
+  from { transform: scale(.2); }
+  to   { transform: scale(1);  }
+}

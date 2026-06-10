@@ -1,0 +1,28 @@
+.Message {
+  position: relative;
+  animation: fadeInUp .25s cubic-bezier(.25,.46,.45,.94) both;
+}
+.Message + .Message { margin-top: var(--gutter); }
+
+.Message-main {
+  display: flex;
+  align-items: flex-start;
+}
+.Message-inner {
+  min-width: 0;
+  max-width: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* bot (left) */
+.Message--left .Bubble  { margin-right: var(--msg-gutter); }
+
+/* user (right) */
+.Message--right .Message-main { flex-direction: row-reverse; justify-content: flex-start; }
+.Message--right .Message-inner { align-items: flex-end; }
+.Message--right .Bubble {
+  margin-left: var(--msg-gutter);
+  background: var(--brand-3);
+  box-shadow: none;
+}

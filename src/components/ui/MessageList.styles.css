@@ -1,0 +1,19 @@
+.MessageContainer {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.MessageList {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--gutter);
+  font-size: 15px;
+  display: flex;
+  flex-direction: column;
+}
+
+.MessageList:focus { outline: 0; }

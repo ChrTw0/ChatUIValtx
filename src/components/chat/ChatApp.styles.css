@@ -1,0 +1,64 @@
+.ChatApp-wrap {
+  display: flex;
+  justify-content: center;
+  align-items: stretch;
+  height: 100%;
+  background: var(--app-bg);
+  padding: 24px 16px;
+}
+
+/* Contenedor principal — crece hasta max-width, se divide cuando panel está abierto */
+.ChatApp {
+  display: flex;
+  flex-direction: row;
+  width: 100%;
+  max-width: 780px;
+  height: 100%;
+  background: var(--color-fill-1);
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0,0,0,.10);
+  overflow: hidden;
+  transition: max-width .25s ease;
+}
+
+.ChatApp--split {
+  max-width: 1160px;
+}
+
+/* Columna chat */
+.ChatApp-chat {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+  color: var(--color-text-1);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+/* Columna panel */
+.ChatApp-panel {
+  width: 400px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: slideIn .2s ease;
+}
+
+@keyframes slideIn {
+  from { opacity: 0; transform: translateX(16px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+/* Mobile — panel ocupa pantalla completa encima del chat */
+@media (max-width: 600px) {
+  .ChatApp-wrap { padding: 0; }
+  .ChatApp { border-radius: 0; box-shadow: none; max-width: 100%; }
+  .ChatApp--split { max-width: 100%; }
+  .ChatApp-panel {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    z-index: 20;
+  }
+}
