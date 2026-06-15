@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>COMP-14 — Micro-eventos de estado</title>
+<style>
+  :root {
+    --brand-1: #ff6200;
+    --brand-3: #ffe0cc;
+    --white:   #fff;
+    --gray-1:  #1a1a1a;
+    --gray-3:  #555;
+    --gray-4:  #888;
+    --gray-5:  #bbb;
+    --gray-6:  #ddd;
+    --gray-7:  #eee;
+    --gray-8:  #f7f7f7;
+    --radius-sm: 6px;
+    --radius-md: 10px;
+    --shadow-1: 0 3px 4px rgba(0,0,0,.04);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--gray-8);
+    display: flex; align-items: center; justify-content: center;
+    min-height: 100vh; padding: 32px;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-size: 14px; color: var(--gray-1);
+  }
+
+  .chat-area {
+    width: 400px;
+    display: flex; flex-direction: column; gap: 6px;
+  }
+
+  /* Burbujas */
+  .bubble-bot {
+    background: var(--white);
+    border-radius: var(--radius-md) var(--radius-md) var(--radius-md) 4px;
+    box-shadow: var(--shadow-1);
+    padding: 10px 14px;
+    max-width: 85%;
+    font-size: 13px; line-height: 1.55;
+    opacity: 0; transform: translateY(8px);
+    animation: fadeInUp 0.25s cubic-bezier(.25,.46,.45,.94) both;
+  }
+  .bubble-user {
+    background: var(--brand-3);
+    border-radius: var(--radius-md) var(--radius-md) 4px var(--radius-md);
+    padding: 10px 14px;
+    max-width: 70%; align-self: flex-end;
+    font-size: 13px; line-height: 1.55;
+    opacity: 0; transform: translateY(8px);
+    animation: fadeInUp 0.25s cubic-bezier(.25,.46,.45,.94) both;
+  }
+  @keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Micro-evento — línea discreta, no burbuja */
+  .sys-event {
+    display: flex; align-items: center; justify-content: center;
+    gap: 8px; align-self: center;
+    opacity: 0; animation: event-appear 0.4s ease both;
+  }
+  @keyframes event-appear { to { opacity: 1; } }
+
+  .sys-line {
+    height: 1px; width: 36px; border-radius: 1px; flex-shrink: 0;
+  }
+  .sys-inner {
+    display: flex; align-items: center; gap: 5px;
+    font-size: 11px; color: var(--gray-4); white-space: nowrap;
+  }
+  .sys-icon { font-size: 10px; }
+
+  /* Variantes de color por tipo */
+  .sys-avance  .sys-line { background: #22c55e; }
+  .sys-avance  .sys-icon { color: #16a34a; }
+  .sys-avance  .sys-inner { color: #16a34a; }
+
+  .sys-cambio  .sys-line { background: var(--gray-5); }
+  .sys-cambio  .sys-icon { color: var(--gray-4); }
+
+  .sys-alerta  .sys-line { background: #f59e0b; }
+  .sys-alerta  .sys-icon { color: #d97706; }
+  .sys-alerta  .sys-inner { color: #d97706; }
+</style>
+</head>
+<body>
+<div class="chat-area" id="chat"></div>
+
+<script>
+const FLOW = [
+  { t: 'user', text: 'Analiza el documento de licitación adjunto.' },
+  { t: 'bot',  text: 'Entendido, analizo el documento.' },
+  { t: 'sys',  kind: 'cambio', icon: '◈', text: 'A1 Clasificador invocado' },
+  { t: 'bot',  text: 'Clasificado como <strong>Licitación Formal Tipo A</strong> — confianza 92%. ¿Confirmo?' },
+  { t: 'sys',  kind: 'avance', icon: '✓', text: 'Etapa: RECIBIDA → CLASIFICADA' },
+  { t: 'user', text: 'Confirmar.' },
+  { t: 'sys',  kind: 'cambio', icon: '◈', text: 'A6 Registro invocado' },
+  { t: 'bot',  text: 'Clasificación registrada. ¿Generamos la propuesta técnica?' },
+  { t: 'user', text: 'Sí, arranca.' },
+  { t: 'sys',  kind: 'cambio', icon: '◈', text: 'A2 Constructor PTE invocado' },
+  { t: 'sys',  kind: 'cambio', icon: '◇', text: 'Draft v1 generado · 45% completitud' },
+  { t: 'bot',  text: 'He generado el borrador. Faltan: alcance técnico y plazo de entrega. ¿Puedes completarlos?' },
+  { t: 'sys',  kind: 'alerta', icon: '⚠', text: 'A3 detectó variación de precio +15%' },
+];
+
+const chat = document.getElementById('chat');
+let delay = 0;
+
+FLOW.forEach(msg => {
+  const pause = msg.t === 'sys' ? 280 : 480;
+
+  setTimeout(() => {
+    let el;
+    if (msg.t === 'bot') {
+      el = document.createElement('div');
+      el.className = 'bubble-bot';
+      el.innerHTML = msg.text;
+    } else if (msg.t === 'user') {
+      el = document.createElement('div');
+      el.className = 'bubble-user';
+      el.textContent = msg.text;
+    } else {
+      el = document.createElement('div');
+      el.className = `sys-event sys-${msg.kind}`;
+      el.innerHTML = `
+        <div class="sys-line"></div>
+        <div class="sys-inner">
+          <span class="sys-icon">${msg.icon}</span>
+          <span>${msg.text}</span>
+        </div>
+        <div class="sys-line"></div>
+      `;
+    }
+    chat.appendChild(el);
+    chat.scrollTop = chat.scrollHeight;
+  }, delay);
+
+  delay += pause;
+});
+</script>
+</body>
+</html>

@@ -1,3 +1,9 @@
+export type ThinkingFase =
+  | { tipo: 'idle' }
+  | { tipo: 'skeleton' }
+  | { tipo: 'typing' }
+  | { tipo: 'pill'; agente: string };
+
 export interface HitlState {
   activo: boolean;
   pregunta: string;

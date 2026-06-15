@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>COMP-03 — A3 Alerta de precio</title>
+<style>
+  :root {
+    --hud-primary:  #63B3ED;
+    --hud-success:  #68D391;
+    --hud-warning:  #F6AD55;
+    --hud-critical: #FC8181;
+    --hud-bg:       rgba(10, 15, 30, 0.95);
+    --hud-border:   rgba(99, 179, 237, 0.25);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #0a0f1e;
+    display: flex; align-items: center; justify-content: center;
+    min-height: 100vh; font-family: system-ui, sans-serif;
+    color: #e2e8f0; gap: 30px; flex-wrap: wrap; padding: 40px;
+  }
+
+  .panel {
+    width: 300px; padding: 20px;
+    background: var(--hud-bg);
+    border: 1px solid var(--hud-border);
+    clip-path: polygon(14px 0%, 100% 0%, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0% 100%, 0% 14px);
+    position: relative; overflow: hidden;
+    animation: hud-reveal 0.5s cubic-bezier(0.16,1,0.3,1) forwards;
+  }
+  @keyframes hud-reveal {
+    0%   { clip-path: polygon(14px 0%, 100% 0%, 100% 0%, 0% 0%, 0% 14px, 14px 0%); opacity: 0; }
+    100% { clip-path: polygon(14px 0%, 100% 0%, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0% 100%, 0% 14px); opacity: 1; }
+  }
+
+  /* Critical flash overlay */
+  .critical-flash {
+    position: absolute; inset: 0;
+    background: rgba(252,129,129,0.08);
+    animation: flash-crit 0.3s ease forwards;
+    pointer-events: none;
+  }
+  @keyframes flash-crit {
+    0%   { opacity: 0; }
+    30%  { opacity: 1; }
+    70%  { opacity: 0.7; }
+    100% { opacity: 0; }
+  }
+
+  .scan-line {
+    position: absolute; left: 0; right: 0; height: 1px; top: 0;
+    background: linear-gradient(90deg, transparent, var(--hud-critical), transparent);
+    box-shadow: 0 0 8px var(--hud-critical);
+    animation: scan 0.8s ease-out forwards;
+  }
+  @keyframes scan { from { top:0; opacity:1; } to { top:100%; opacity:0; } }
+
+  .header {
+    display: flex; align-items: center; gap: 8px;
+    margin-bottom: 14px; font-size: 10px; letter-spacing: 2px;
+    text-transform: uppercase; color: var(--hud-critical);
+    font-family: 'Courier New', monospace;
+  }
+  .header-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--hud-critical);
+    animation: blink-crit 0.8s ease-in-out infinite;
+  }
+  @keyframes blink-crit { 0%,100%{opacity:1} 50%{opacity:0.2} }
+
+  /* Proveedor */
+  .proveedor-row {
+    font-family: 'Courier New', monospace; font-size: 11px;
+    color: rgba(226,232,240,0.4); margin-bottom: 14px;
+  }
+  .proveedor-row span { color: #e2e8f0; }
+
+  /* Variación central */
+  .variacion-block {
+    text-align: center; padding: 18px 0;
+    border: 1px solid rgba(252,129,129,0.3);
+    margin-bottom: 14px;
+    clip-path: polygon(8px 0%, 100% 0%, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0% 100%, 0% 8px);
+    background: rgba(252,129,129,0.05);
+    position: relative;
+    overflow: hidden;
+  }
+  .variacion-label {
+    font-size: 9px; letter-spacing: 2px; text-transform: uppercase;
+    color: rgba(252,129,129,0.6); font-family: 'Courier New', monospace;
+    margin-bottom: 6px;
+  }
+  .variacion-val {
+    font-size: 42px; font-weight: bold;
+    color: var(--hud-critical);
+    font-family: 'Courier New', monospace;
+    text-shadow: 0 0 20px rgba(252,129,129,0.6);
+    animation: cardiac-pulse 0.4s ease-out 0.2s;
+    display: inline-block;
+  }
+  @keyframes cardiac-pulse {
+    0%   { transform: scale(1); }
+    30%  { transform: scale(1.15); text-shadow: 0 0 30px rgba(252,129,129,0.9); }
+    60%  { transform: scale(0.97); }
+    100% { transform: scale(1); }
+  }
+
+  /* Afectadas */
+  .afectadas-row {
+    display: flex; justify-content: space-between; align-items: center;
+    font-family: 'Courier New', monospace; font-size: 11px;
+    color: rgba(226,232,240,0.4); margin-bottom: 12px;
+  }
+  .afectadas-num {
+    font-size: 24px; font-weight: bold; color: var(--hud-warning);
+    font-family: 'Courier New', monospace;
+  }
+
+  /* Status bar */
+  .status-bar {
+    display: flex; align-items: center; gap: 8px;
+    padding: 8px 10px;
+    background: rgba(252,129,129,0.08);
+    border: 1px solid rgba(252,129,129,0.25);
+    border-radius: 3px;
+    font-size: 11px; font-family: 'Courier New', monospace;
+    color: var(--hud-critical);
+  }
+  .status-icon { font-size: 13px; }
+
+  /* — PANEL NEUTRO (sin umbral) — */
+  .panel-neutro { border-color: var(--hud-border); }
+  .panel-neutro .header { color: var(--hud-primary); }
+  .panel-neutro .header-dot { background: var(--hud-primary); animation: none; opacity:0.6; }
+  .panel-neutro .variacion-block {
+    border-color: rgba(99,179,237,0.2); background: rgba(99,179,237,0.04);
+  }
+  .panel-neutro .variacion-val { color: var(--hud-primary); text-shadow: 0 0 12px rgba(99,179,237,0.4); animation: none; }
+  .panel-neutro .status-bar { background: rgba(104,211,145,0.08); border-color: rgba(104,211,145,0.3); color: var(--hud-success); }
+
+  .scenario-label {
+    text-align: center; font-size: 9px; letter-spacing: 2px; text-transform: uppercase;
+    color: rgba(226,232,240,0.2); font-family: 'Courier New', monospace;
+    margin-bottom: 16px;
+  }
+</style>
+</head>
+<body>
+
+<!-- CRÍTICO -->
+<div>
+  <div class="scenario-label">supera_umbral = true</div>
+  <div class="panel" id="panel-crit">
+    <div class="critical-flash"></div>
+    <div class="scan-line"></div>
+    <div class="header">
+      <div class="header-dot"></div>
+      A3 · ALERTA PRECIO · CRÍTICO
+    </div>
+    <div class="proveedor-row">PROVEEDOR · <span>PROVEEDOR-0042</span></div>
+    <div class="variacion-block">
+      <div class="variacion-label">Variación detectada</div>
+      <div class="variacion-val" id="variacion-val">+0%</div>
+    </div>
+    <div class="afectadas-row">
+      <div>
+        <div class="afectadas-num" id="afectadas-num">0</div>
+        <div style="font-size:9px;color:rgba(226,232,240,0.4);margin-top:2px;">OPORT. AFECTADAS</div>
+      </div>
+      <div style="text-align:right;">
+        <div style="font-size:9px;color:rgba(226,232,240,0.4);">ALERTAS PROPAGADAS</div>
+        <div style="font-size:20px;color:var(--hud-warning);font-family:'Courier New',monospace;" id="propagadas-num">0</div>
+      </div>
+    </div>
+    <div class="status-bar">
+      <span class="status-icon">⚠</span>
+      <span>Umbral superado — acción requerida</span>
+    </div>
+  </div>
+</div>
+
+<!-- NEUTRO -->
+<div>
+  <div class="scenario-label">supera_umbral = false</div>
+  <div class="panel panel-neutro">
+    <div class="header">
+      <div class="header-dot"></div>
+      A3 · MONITOR COSTOS · OK
+    </div>
+    <div class="proveedor-row">PROVEEDOR · <span>PROVEEDOR-0017</span></div>
+    <div class="variacion-block">
+      <div class="variacion-label">Variación detectada</div>
+      <div class="variacion-val">+4%</div>
+    </div>
+    <div class="afectadas-row">
+      <div>
+        <div style="font-size:24px;font-weight:bold;color:var(--hud-primary);font-family:'Courier New',monospace;">2</div>
+        <div style="font-size:9px;color:rgba(226,232,240,0.4);margin-top:2px;">OPORT. AFECTADAS</div>
+      </div>
+    </div>
+    <div class="status-bar">
+      <span class="status-icon">✓</span>
+      <span>Dentro del rango aceptable</span>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Count-up animaciones para panel crítico
+  function countUp(el, target, suffix, delay, speed) {
+    let current = 0;
+    setTimeout(() => {
+      const step = () => {
+        current = Math.min(current + Math.ceil(target / 40), target);
+        el.textContent = (suffix === '%' ? '+' : '') + current + (suffix || '');
+        if (current < target) requestAnimationFrame(step);
+      };
+      requestAnimationFrame(step);
+    }, delay);
+  }
+
+  countUp(document.getElementById('variacion-val'), 15, '%', 200, 30);
+  countUp(document.getElementById('afectadas-num'), 7, '', 300, 40);
+  countUp(document.getElementById('propagadas-num'), 3, '', 400, 80);
+</script>
+</body>
+</html>

@@ -1,0 +1,31 @@
+.AgentPill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--color-fill-1);
+  border: 1px solid var(--color-line-2);
+  border-radius: 20px;
+  padding: 7px 14px 7px 10px;
+  box-shadow: var(--shadow-1);
+}
+
+.AgentPill-spinner {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  border: 2px solid var(--gray-6);
+  border-top-color: var(--brand-1);
+  animation: agentPillSpin 0.7s linear infinite;
+}
+
+@keyframes agentPillSpin {
+  to { transform: rotate(360deg); }
+}
+
+.AgentPill-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-text-2);
+  white-space: nowrap;
+}

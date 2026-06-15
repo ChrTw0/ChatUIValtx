@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>COMP-07 — Pipeline activo</title>
+<style>
+  :root {
+    --brand-1: #ff6200;
+    --brand-3: #ffe0cc;
+    --brand-4: #ffefe5;
+    --white:   #fff;
+    --gray-1:  #1a1a1a;
+    --gray-3:  #555;
+    --gray-4:  #888;
+    --gray-5:  #bbb;
+    --gray-6:  #ddd;
+    --gray-7:  #eee;
+    --gray-8:  #f7f7f7;
+    --radius-sm: 6px;
+    --radius-md: 10px;
+    --shadow-1: 0 3px 4px rgba(0,0,0,.04);
+    --shadow-2: 0 4px 8px rgba(0,0,0,.08);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--gray-8);
+    display: flex; align-items: flex-start; justify-content: center;
+    min-height: 100vh; padding: 32px;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-size: 14px; color: var(--gray-1);
+  }
+
+  .panel {
+    background: var(--white);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-1);
+    width: 360px; overflow: hidden;
+    animation: fadeInUp 0.25s cubic-bezier(.25,.46,.45,.94) both;
+  }
+  @keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Header */
+  .panel-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 16px 10px;
+    border-bottom: 1px solid var(--gray-7);
+  }
+  .panel-title { font-size: 13px; font-weight: 600; }
+  .panel-sub   { font-size: 11px; color: var(--gray-4); }
+
+  /* Etapas header */
+  .stages-header {
+    display: flex; padding: 8px 16px 0;
+    border-bottom: 1px solid var(--gray-7);
+    gap: 0;
+  }
+  .stage-lbl {
+    flex: 1; text-align: center;
+    font-size: 9px; font-weight: 600; text-transform: uppercase;
+    letter-spacing: 0.5px; color: var(--gray-5);
+    padding-bottom: 7px;
+    border-bottom: 2px solid transparent;
+    transition: color 0.15s;
+  }
+
+  /* Lista de filas */
+  .row-list { padding: 8px 12px 12px; display: flex; flex-direction: column; gap: 4px; }
+
+  .opp-row {
+    padding: 9px 10px;
+    border: 1px solid var(--gray-7);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    opacity: 0; transform: translateX(12px);
+    animation: row-in 0.3s cubic-bezier(.25,.46,.45,.94) both;
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+  .opp-row:hover { border-color: var(--gray-6); box-shadow: var(--shadow-1); }
+  @keyframes row-in {
+    to { opacity: 1; transform: translateX(0); }
+  }
+
+  /* Top row */
+  .row-top {
+    display: flex; align-items: center; gap: 8px; margin-bottom: 6px;
+  }
+  .row-cliente {
+    flex: 1; font-size: 12px; font-weight: 500;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .row-monto {
+    font-size: 12px; font-weight: 600; color: var(--brand-1); white-space: nowrap;
+  }
+
+  /* Barra monto proporcional */
+  .monto-track {
+    height: 3px; background: var(--gray-7); border-radius: 2px; margin-bottom: 7px;
+  }
+  .monto-fill {
+    height: 100%; background: var(--brand-1); border-radius: 2px;
+    width: 0; transition: width 0.7s cubic-bezier(.25,.46,.45,.94);
+    opacity: 0.5;
+  }
+
+  /* Pipeline dots — 5 pasos */
+  .stage-track {
+    display: flex; gap: 3px; align-items: center;
+  }
+  .stage-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--gray-7); flex-shrink: 0;
+  }
+  .stage-dot.passed  { background: var(--brand-3); }
+  .stage-dot.active  { background: var(--brand-1); width: 8px; height: 8px; }
+  .stage-sep {
+    flex: 1; height: 1px; background: var(--gray-7);
+  }
+  .stage-sep.passed { background: var(--brand-3); }
+
+  .row-meta {
+    font-size: 10px; color: var(--gray-4); margin-top: 5px;
+    display: flex; justify-content: space-between;
+  }
+
+  /* tiene_más */
+  .opp-row.tiene-mas {
+    border-style: dashed; border-color: var(--gray-6);
+    background: var(--gray-8);
+    animation: row-in 0.3s cubic-bezier(.25,.46,.45,.94) both;
+  }
+  .opp-row.tiene-mas .row-cliente {
+    color: var(--gray-4); font-weight: 400; font-size: 12px;
+  }
+
+  /* Footer */
+  .panel-footer {
+    padding: 8px 16px;
+    border-top: 1px solid var(--gray-7);
+    font-size: 11px; color: var(--gray-4);
+    text-align: right;
+  }
+</style>
+</head>
+<body>
+<div class="panel">
+  <div class="panel-header">
+    <span class="panel-title">Pipeline activo</span>
+    <span class="panel-sub" id="sub-label"></span>
+  </div>
+
+  <div class="stages-header" id="stages-header"></div>
+
+  <div class="row-list" id="row-list"></div>
+
+  <div class="panel-footer" id="footer"></div>
+</div>
+
+<script>
+const ETAPAS = ['RECIBIDA','CLASIFICADA','EN PROPUESTA','ENVIADA','NEGOCIACIÓN'];
+const ETAPA_IDX = {
+  RECIBIDA: 0, CLASIFICADA: 1, EN_PROPUESTA: 2,
+  PROPUESTA_ENVIADA: 3, EN_NEGOCIACION: 4
+};
+
+const DATA = {
+  total: 47,
+  tiene_mas: true,
+  datos: [
+    { cliente: 'CLIENTE ALFA S.A.',   etapa: 'EN_NEGOCIACION',   ejecutivo: 'EJ-01', monto: 95000 },
+    { cliente: 'CLIENTE BETA CORP',   etapa: 'PROPUESTA_ENVIADA',ejecutivo: 'EJ-02', monto: 72000 },
+    { cliente: 'CLIENTE GAMMA',       etapa: 'EN_PROPUESTA',     ejecutivo: 'EJ-01', monto: 58000 },
+    { cliente: 'CLIENTE DELTA INC.',  etapa: 'CLASIFICADA',      ejecutivo: 'EJ-03', monto: 41000 },
+    { cliente: 'CLIENTE EPSILON',     etapa: 'RECIBIDA',         ejecutivo: 'EJ-02', monto: 28000 },
+  ],
+};
+
+const maxMonto = Math.max(...DATA.datos.map(d => d.monto));
+document.getElementById('sub-label').textContent = DATA.total + ' oportunidades';
+
+// Etapas header
+const stagesHeader = document.getElementById('stages-header');
+ETAPAS.forEach(e => {
+  const el = document.createElement('div');
+  el.className = 'stage-lbl';
+  el.textContent = e;
+  stagesHeader.appendChild(el);
+});
+
+// Filas
+const list = document.getElementById('row-list');
+
+DATA.datos.forEach((opp, i) => {
+  const idx = ETAPA_IDX[opp.etapa] ?? 0;
+  const pct = (opp.monto / maxMonto * 100).toFixed(1);
+
+  const stageNodes = ETAPAS.map((_, s) => {
+    if (s < idx)  return `<div class="stage-dot passed"></div>${s < ETAPAS.length-1 ? '<div class="stage-sep passed"></div>' : ''}`;
+    if (s === idx) return `<div class="stage-dot active"></div>${s < ETAPAS.length-1 ? '<div class="stage-sep"></div>' : ''}`;
+    return `<div class="stage-dot"></div>${s < ETAPAS.length-1 ? '<div class="stage-sep"></div>' : ''}`;
+  }).join('');
+
+  const etapaLabel = opp.etapa.replace(/_/g, ' ');
+
+  const row = document.createElement('div');
+  row.className = 'opp-row';
+  row.style.animationDelay = (i * 0.05) + 's';
+  row.innerHTML = `
+    <div class="row-top">
+      <span class="row-cliente">${opp.cliente}</span>
+      <span class="row-monto">$${(opp.monto/1000).toFixed(0)}K</span>
+    </div>
+    <div class="monto-track"><div class="monto-fill" data-pct="${pct}"></div></div>
+    <div class="stage-track">${stageNodes}</div>
+    <div class="row-meta">
+      <span>${opp.ejecutivo}</span>
+      <span>${etapaLabel}</span>
+    </div>
+  `;
+  list.appendChild(row);
+
+  setTimeout(() => {
+    row.querySelector('.monto-fill').style.width = pct + '%';
+  }, i * 50 + 200);
+});
+
+// tiene_más
+if (DATA.tiene_mas) {
+  const more = document.createElement('div');
+  more.className = 'opp-row tiene-mas';
+  more.style.animationDelay = (DATA.datos.length * 0.05) + 's';
+  const resto = DATA.total - DATA.datos.length;
+  more.innerHTML = `
+    <div class="row-top">
+      <span class="row-cliente">+ ${resto} oportunidades más disponibles</span>
+    </div>
+  `;
+  list.appendChild(more);
+}
+
+document.getElementById('footer').textContent =
+  `Mostrando ${DATA.datos.length} de ${DATA.total}`;
+</script>
+</body>
+</html>

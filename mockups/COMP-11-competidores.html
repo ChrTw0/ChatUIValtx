@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>COMP-11 — A7 Competidores</title>
+<style>
+  :root {
+    --hud-primary:  #63B3ED;
+    --hud-success:  #68D391;
+    --hud-warning:  #F6AD55;
+    --hud-critical: #FC8181;
+    --hud-bg:       rgba(10, 15, 30, 0.95);
+    --hud-border:   rgba(99, 179, 237, 0.25);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #0a0f1e; display: flex; align-items: center; justify-content: center;
+    min-height: 100vh; font-family: system-ui, sans-serif; color: #e2e8f0; padding: 40px;
+  }
+  .panel {
+    width: 380px; padding: 20px;
+    background: var(--hud-bg); border: 1px solid var(--hud-border);
+    clip-path: polygon(14px 0%, 100% 0%, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0% 100%, 0% 14px);
+    position: relative; overflow: hidden;
+    animation: hud-reveal 0.6s ease forwards;
+  }
+  @keyframes hud-reveal { 0%{opacity:0.3} 100%{opacity:1} }
+  .scan-line {
+    position: absolute; left:0; right:0; height:1px; top:0;
+    background: linear-gradient(90deg, transparent, var(--hud-primary), transparent);
+    box-shadow: 0 0 8px var(--hud-primary); animation: scan 0.8s ease-out forwards;
+  }
+  @keyframes scan { from{top:0;opacity:1} to{top:100%;opacity:0} }
+  .header {
+    display: flex; align-items: center; gap: 8px; margin-bottom: 14px;
+    font-size: 10px; letter-spacing: 2px; text-transform: uppercase;
+    color: var(--hud-primary); font-family: 'Courier New', monospace;
+  }
+  .header-dot { width:6px; height:6px; border-radius:50%; background:var(--hud-primary); animation:blink 1.5s infinite; }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+  /* Force field canvas */
+  #force-canvas { display: block; width: 100%; height: 240px; }
+
+  /* Tooltip */
+  .tooltip {
+    position: fixed; background: rgba(10,15,30,0.98);
+    border: 1px solid rgba(99,179,237,0.3); padding: 8px 12px;
+    font-size: 10px; font-family: 'Courier New', monospace; color: #e2e8f0;
+    opacity: 0; transition: opacity 0.15s; pointer-events: none;
+    clip-path: polygon(6px 0%,100% 0%,100% calc(100% - 6px),calc(100% - 6px) 100%,0% 100%,0% 6px);
+    z-index: 100; line-height: 1.6;
+  }
+
+  /* Legend */
+  .legend {
+    display: flex; gap: 12px; margin-top: 12px;
+    font-size: 9px; font-family: 'Courier New', monospace;
+    color: rgba(226,232,240,0.3);
+  }
+  .legend-item { display: flex; align-items: center; gap: 5px; }
+  .legend-dot { width:8px; height:8px; border-radius:50%; }
+</style>
+</head>
+<body>
+<div class="panel">
+  <div class="scan-line"></div>
+  <div class="header">
+    <div class="header-dot"></div>
+    A7 · COMPETIDORES · RED
+  </div>
+  <canvas id="force-canvas"></canvas>
+  <div class="legend">
+    <div class="legend-item"><div class="legend-dot" style="background:var(--hud-success)"></div> Ganamos más</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--hud-critical)"></div> Perdemos más</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--hud-warning)"></div> Par</div>
+  </div>
+</div>
+<div class="tooltip" id="tooltip"></div>
+
+<script>
+const DATA = [
+  { competidor: "COMP ALFA",   total_apariciones: 18, veces_ganamos: 12, veces_perdimos: 6 },
+  { competidor: "COMP BETA",   total_apariciones: 14, veces_ganamos: 5,  veces_perdimos: 9 },
+  { competidor: "COMP GAMMA",  total_apariciones: 11, veces_ganamos: 7,  veces_perdimos: 4 },
+  { competidor: "COMP DELTA",  total_apariciones: 8,  veces_ganamos: 2,  veces_perdimos: 6 },
+  { competidor: "COMP EPSILON",total_apariciones: 6,  veces_ganamos: 4,  veces_perdimos: 2 },
+  { competidor: "COMP ZETA",   total_apariciones: 4,  veces_ganamos: 1,  veces_perdimos: 3 },
+];
+
+const canvas = document.getElementById('force-canvas');
+const ctx = canvas.getContext('2d');
+const W = canvas.offsetWidth, H = 240;
+canvas.width = W; canvas.height = H;
+
+const maxAp = Math.max(...DATA.map(d => d.total_apariciones));
+
+function nodeColor(d) {
+  const ratio = d.veces_ganamos / d.total_apariciones;
+  if (ratio > 0.6) return '#68D391';
+  if (ratio < 0.4) return '#FC8181';
+  return '#F6AD55';
+}
+function nodeRadius(ap) { return 18 + (ap / maxAp) * 28; }
+
+// Initialize nodes with random positions
+const nodes = DATA.map((d, i) => ({
+  ...d,
+  x: W * (0.2 + Math.random() * 0.6),
+  y: H * (0.2 + Math.random() * 0.6),
+  vx: 0, vy: 0,
+  r: nodeRadius(d.total_apariciones),
+  color: nodeColor(d),
+  scale: 0,
+}));
+
+// Simple force simulation
+function simulate() {
+  const cx = W/2, cy = H/2;
+  nodes.forEach(n => {
+    // Center attraction
+    n.vx += (cx - n.x) * 0.005;
+    n.vy += (cy - n.y) * 0.005;
+    // Repulsion from other nodes
+    nodes.forEach(m => {
+      if (m === n) return;
+      const dx = n.x - m.x, dy = n.y - m.y;
+      const dist = Math.sqrt(dx*dx + dy*dy) || 1;
+      const minDist = n.r + m.r + 10;
+      if (dist < minDist) {
+        const force = (minDist - dist) / dist * 0.4;
+        n.vx += dx * force; n.vy += dy * force;
+      }
+    });
+    // Wall repulsion
+    if (n.x < n.r + 10) n.vx += 2;
+    if (n.x > W - n.r - 10) n.vx -= 2;
+    if (n.y < n.r + 10) n.vy += 2;
+    if (n.y > H - n.r - 10) n.vy -= 2;
+    // Damping
+    n.vx *= 0.85; n.vy *= 0.85;
+    n.x += n.vx; n.y += n.vy;
+    // Scale in
+    if (n.scale < 1) n.scale = Math.min(n.scale + 0.04, 1);
+  });
+}
+
+function draw() {
+  ctx.clearRect(0, 0, W, H);
+
+  // Draw connections
+  for (let i = 0; i < nodes.length; i++) {
+    for (let j = i+1; j < nodes.length; j++) {
+      const a = nodes[i], b = nodes[j];
+      ctx.beginPath();
+      ctx.moveTo(a.x, a.y);
+      ctx.lineTo(b.x, b.y);
+      ctx.strokeStyle = 'rgba(99,179,237,0.06)';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+    }
+  }
+
+  // Draw nodes
+  nodes.forEach(n => {
+    const r = n.r * n.scale;
+    // Glow
+    const grad = ctx.createRadialGradient(n.x, n.y, r*0.3, n.x, n.y, r*1.4);
+    grad.addColorStop(0, n.color + '33');
+    grad.addColorStop(1, 'transparent');
+    ctx.beginPath();
+    ctx.arc(n.x, n.y, r*1.4, 0, Math.PI*2);
+    ctx.fillStyle = grad;
+    ctx.fill();
+
+    // Circle
+    ctx.beginPath();
+    ctx.arc(n.x, n.y, r, 0, Math.PI*2);
+    ctx.fillStyle = n.color + '22';
+    ctx.fill();
+    ctx.strokeStyle = n.color;
+    ctx.lineWidth = 1.5;
+    ctx.globalAlpha = n.scale;
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+
+    // Label
+    ctx.fillStyle = 'rgba(226,232,240,' + (0.7 * n.scale) + ')';
+    ctx.font = `${Math.max(8, r / 3)}px Courier New`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(n.competidor.split(' ')[1], n.x, n.y - 4);
+    ctx.font = `bold ${Math.max(10, r / 2.5)}px Courier New`;
+    ctx.fillStyle = n.color + Math.round(n.scale * 255).toString(16).padStart(2,'0');
+    ctx.fillText(n.total_apariciones, n.x, n.y + r/3);
+  });
+}
+
+let frame = 0;
+function loop() {
+  if (frame < 200) simulate();
+  draw();
+  frame++;
+  requestAnimationFrame(loop);
+}
+loop();
+
+// Tooltip
+const tooltip = document.getElementById('tooltip');
+canvas.addEventListener('mousemove', (e) => {
+  const rect = canvas.getBoundingClientRect();
+  const mx = e.clientX - rect.left, my = e.clientY - rect.top;
+  let hit = null;
+  nodes.forEach(n => {
+    const dx = mx - n.x, dy = my - n.y;
+    if (Math.sqrt(dx*dx+dy*dy) < n.r) hit = n;
+  });
+  if (hit) {
+    tooltip.style.opacity = '1';
+    const ratio = (hit.veces_ganamos / hit.total_apariciones * 100).toFixed(0);
+    tooltip.innerHTML = `
+      <div style="color:${hit.color};margin-bottom:4px">${hit.competidor}</div>
+      <div>Apariciones: <b>${hit.total_apariciones}</b></div>
+      <div>Ganamos: <b style="color:var(--hud-success)">${hit.veces_ganamos}</b></div>
+      <div>Perdimos: <b style="color:var(--hud-critical)">${hit.veces_perdimos}</b></div>
+      <div>Ratio: <b style="color:${hit.color}">${ratio}%</b></div>
+    `;
+    tooltip.style.left = (e.clientX + 14) + 'px';
+    tooltip.style.top = (e.clientY - 10) + 'px';
+  } else {
+    tooltip.style.opacity = '0';
+  }
+});
+canvas.addEventListener('mouseleave', () => { tooltip.style.opacity = '0'; });
+</script>
+</body>
+</html>

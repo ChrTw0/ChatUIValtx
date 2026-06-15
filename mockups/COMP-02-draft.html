@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>COMP-02 — A2 Draft vivo</title>
+<style>
+  :root {
+    --hud-primary:  #63B3ED;
+    --hud-success:  #68D391;
+    --hud-warning:  #F6AD55;
+    --hud-critical: #FC8181;
+    --hud-bg:       rgba(10, 15, 30, 0.95);
+    --hud-border:   rgba(99, 179, 237, 0.25);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #0a0f1e;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    font-family: system-ui, sans-serif;
+    color: #e2e8f0;
+    gap: 20px;
+    flex-wrap: wrap;
+    padding: 40px;
+  }
+
+  .panel {
+    width: 320px;
+    padding: 20px;
+    background: var(--hud-bg);
+    border: 1px solid var(--hud-border);
+    clip-path: polygon(14px 0%, 100% 0%, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0% 100%, 0% 14px);
+    position: relative;
+    overflow: hidden;
+    animation: hud-reveal 0.6s cubic-bezier(0.16,1,0.3,1) forwards;
+  }
+  @keyframes hud-reveal {
+    0%   { clip-path: polygon(14px 0%, 100% 0%, 100% 0%, 0% 0%, 0% 14px, 14px 0%); opacity: 0.3; }
+    100% { clip-path: polygon(14px 0%, 100% 0%, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0% 100%, 0% 14px); opacity: 1; }
+  }
+  .scan-line {
+    position: absolute; left: 0; right: 0; height: 1px; top: 0;
+    background: linear-gradient(90deg, transparent, var(--hud-primary), transparent);
+    box-shadow: 0 0 8px var(--hud-primary);
+    animation: scan 0.8s ease-out forwards;
+  }
+  @keyframes scan { from { top: 0; opacity: 1; } to { top: 100%; opacity: 0; } }
+
+  .header {
+    display: flex; align-items: center; gap: 8px;
+    margin-bottom: 16px; font-size: 10px; letter-spacing: 2px;
+    text-transform: uppercase; color: var(--hud-primary);
+    font-family: 'Courier New', monospace;
+  }
+  .header-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--hud-primary);
+    animation: blink 1.5s ease-in-out infinite;
+  }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+  /* Arc progress */
+  .arc-wrapper {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 12px 0 18px;
+    position: relative;
+  }
+  .arc-svg { transform: rotate(-90deg); }
+  .arc-bg { fill: none; stroke: rgba(99,179,237,0.12); stroke-width: 6; }
+  .arc-fill {
+    fill: none; stroke: var(--hud-primary); stroke-width: 6;
+    stroke-linecap: round;
+    stroke-dasharray: 251.3;
+    stroke-dashoffset: 251.3;
+    transition: stroke-dashoffset 1.2s cubic-bezier(0.16,1,0.3,1);
+    filter: drop-shadow(0 0 4px var(--hud-primary));
+  }
+  .arc-center {
+    position: absolute;
+    text-align: center;
+    font-family: 'Courier New', monospace;
+  }
+  .arc-pct {
+    font-size: 28px; font-weight: bold; color: var(--hud-primary);
+    line-height: 1;
+  }
+  .arc-label {
+    font-size: 9px; letter-spacing: 1px; color: rgba(226,232,240,0.4);
+    text-transform: uppercase;
+  }
+
+  /* Secciones */
+  .section-label {
+    font-size: 9px; letter-spacing: 2px; text-transform: uppercase;
+    color: rgba(226,232,240,0.4); margin-bottom: 8px;
+    font-family: 'Courier New', monospace;
+  }
+
+  .campos { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+  .campo {
+    padding: 7px 10px;
+    border-radius: 3px;
+    font-size: 11px;
+    font-family: 'Courier New', monospace;
+    border: 1px solid rgba(99,179,237,0.2);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    opacity: 0;
+    animation: fade-in 0.3s ease forwards;
+  }
+  .campo-ok {
+    background: rgba(104,211,145,0.06);
+    border-color: rgba(104,211,145,0.25);
+    color: rgba(226,232,240,0.7);
+  }
+  .campo-ok .check { color: var(--hud-success); font-size: 12px; }
+
+  .campo-pending {
+    background: rgba(246,173,85,0.06);
+    border-color: rgba(246,173,85,0.3);
+    color: var(--hud-warning);
+    animation: fade-in 0.3s ease forwards, pulse-pending 2s ease-in-out infinite;
+  }
+  .campo-pending .icon { opacity: 0.6; font-size: 10px; }
+
+  @keyframes fade-in { to { opacity: 1; } }
+  @keyframes pulse-pending {
+    0%,100% { border-color: rgba(246,173,85,0.3); box-shadow: none; }
+    50%      { border-color: rgba(246,173,85,0.7); box-shadow: 0 0 8px rgba(246,173,85,0.2); }
+  }
+
+  /* Margen gauge */
+  .margen-row {
+    display: flex; align-items: center; justify-content: space-between;
+    font-size: 11px; font-family: 'Courier New', monospace;
+    color: rgba(226,232,240,0.5);
+  }
+  .margen-bar {
+    flex: 1; margin: 0 10px; height: 4px;
+    background: rgba(255,255,255,0.08); border-radius: 2px;
+  }
+  .margen-fill {
+    height: 100%; background: var(--hud-success); border-radius: 2px;
+    width: 0; transition: width 1.4s cubic-bezier(0.16,1,0.3,1);
+    box-shadow: 0 0 6px var(--hud-success);
+  }
+  .margen-val { color: var(--hud-success); font-weight: bold; }
+
+  /* Version */
+  .meta-row {
+    display: flex; justify-content: space-between;
+    font-size: 9px; color: rgba(226,232,240,0.3);
+    font-family: 'Courier New', monospace;
+    margin-top: 12px;
+    padding-top: 10px;
+    border-top: 1px solid rgba(99,179,237,0.1);
+  }
+</style>
+</head>
+<body>
+
+<div class="panel">
+  <div class="scan-line"></div>
+  <div class="header">
+    <div class="header-dot"></div>
+    A2 · CONSTRUCTOR PTE · ACTIVO
+  </div>
+
+  <div class="arc-wrapper">
+    <svg class="arc-svg" width="100" height="100" viewBox="0 0 100 100">
+      <circle class="arc-bg" cx="50" cy="50" r="40"/>
+      <circle class="arc-fill" id="arc" cx="50" cy="50" r="40"/>
+    </svg>
+    <div class="arc-center">
+      <div class="arc-pct" id="arc-pct">0%</div>
+      <div class="arc-label">completitud</div>
+    </div>
+  </div>
+
+  <div class="section-label">Secciones del draft</div>
+  <div class="campos" id="campos-container"></div>
+
+  <div class="section-label">Margen estimado</div>
+  <div class="margen-row">
+    <span>MARGEN</span>
+    <div class="margen-bar"><div class="margen-fill" id="margen-fill"></div></div>
+    <span class="margen-val" id="margen-val">0%</span>
+  </div>
+
+  <div class="meta-row">
+    <span>VERSION · v1</span>
+    <span>MONEDA · USD</span>
+    <span>ESTADO · BORRADOR</span>
+  </div>
+</div>
+
+<script>
+  const DATA = {
+    completitud_pct: 45,
+    campos_ok: ["resumen_ejecutivo", "equipo_propuesto", "precio_base"],
+    campos_incompletos: ["alcance_tecnico", "plazo_entrega", "garantias"],
+    version: 1,
+    moneda: "USD",
+    margen_estimado: 0.28,
+  };
+
+  // Arc animation
+  const arcEl = document.getElementById('arc');
+  const arcPct = document.getElementById('arc-pct');
+  const circunference = 2 * Math.PI * 40; // 251.3
+  const target = DATA.completitud_pct / 100;
+  let current = 0;
+
+  setTimeout(() => {
+    arcEl.style.strokeDashoffset = circunference * (1 - target);
+    const step = () => {
+      current = Math.min(current + 1, DATA.completitud_pct);
+      arcPct.textContent = current + '%';
+      if (current < DATA.completitud_pct) requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+  }, 300);
+
+  // Campos
+  const container = document.getElementById('campos-container');
+  DATA.campos_ok.forEach((c, i) => {
+    const el = document.createElement('div');
+    el.className = 'campo campo-ok';
+    el.style.animationDelay = (0.4 + i * 0.08) + 's';
+    el.innerHTML = `<span>${c.replace(/_/g,' ')}</span><span class="check">✓</span>`;
+    container.appendChild(el);
+  });
+  DATA.campos_incompletos.forEach((c, i) => {
+    const el = document.createElement('div');
+    el.className = 'campo campo-pending';
+    el.style.animationDelay = (0.7 + i * 0.08) + 's';
+    el.innerHTML = `<span>${c.replace(/_/g,' ')}</span><span class="icon">pendiente</span>`;
+    container.appendChild(el);
+  });
+
+  // Margen
+  const margenFill = document.getElementById('margen-fill');
+  const margenVal = document.getElementById('margen-val');
+  setTimeout(() => {
+    margenFill.style.width = (DATA.margen_estimado * 100) + '%';
+    let m = 0;
+    const step = () => {
+      m = Math.min(m + 0.5, DATA.margen_estimado * 100);
+      margenVal.textContent = Math.round(m) + '%';
+      if (m < DATA.margen_estimado * 100) requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+  }, 500);
+</script>
+</body>
+</html>

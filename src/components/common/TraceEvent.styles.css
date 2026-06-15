@@ -1,0 +1,57 @@
+.TraceEvent {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 3px 0;
+  font-size: 10px;
+  color: var(--gray-5);
+  animation: fadeInUp 0.2s ease both;
+}
+
+.TraceEvent-line {
+  flex: 1;
+  height: 1px;
+  background: var(--gray-7);
+  transition: background 0.3s ease;
+}
+
+.TraceEvent-content {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+  font-weight: 500;
+}
+
+.TraceEvent-spinner {
+  width: 8px;
+  height: 8px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  border: 1.5px solid var(--gray-5);
+  border-top-color: transparent;
+  animation: traceEventSpin 0.7s linear infinite;
+  transition: background 0.2s, border 0.2s;
+}
+
+.TraceEvent-label {
+  font-family: 'SF Mono', Consolas, 'Courier New', monospace;
+  font-size: 10px;
+}
+
+/* done state */
+.TraceEvent--done {
+  color: var(--gray-4);
+}
+.TraceEvent--done .TraceEvent-line {
+  background: #bbf7d0;
+}
+.TraceEvent--done .TraceEvent-spinner {
+  border: none;
+  background: #22c55e;
+  animation: none;
+}
+
+@keyframes traceEventSpin {
+  to { transform: rotate(360deg); }
+}

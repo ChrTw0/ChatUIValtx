@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>COMP-12 — A7 Resumen sector (Treemap)</title>
+<style>
+  :root {
+    --hud-primary:  #63B3ED;
+    --hud-success:  #68D391;
+    --hud-warning:  #F6AD55;
+    --hud-critical: #FC8181;
+    --hud-bg:       rgba(10, 15, 30, 0.95);
+    --hud-border:   rgba(99, 179, 237, 0.25);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #0a0f1e; display: flex; align-items: center; justify-content: center;
+    min-height: 100vh; font-family: system-ui, sans-serif; color: #e2e8f0; padding: 40px;
+  }
+  .panel {
+    width: 380px; padding: 20px;
+    background: var(--hud-bg); border: 1px solid var(--hud-border);
+    clip-path: polygon(14px 0%, 100% 0%, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0% 100%, 0% 14px);
+    position: relative; overflow: hidden;
+    animation: hud-reveal 0.6s ease forwards;
+  }
+  @keyframes hud-reveal { 0%{opacity:0.3} 100%{opacity:1} }
+  .scan-line {
+    position: absolute; left:0; right:0; height:1px; top:0;
+    background: linear-gradient(90deg, transparent, var(--hud-primary), transparent);
+    box-shadow: 0 0 8px var(--hud-primary); animation: scan 0.8s ease-out forwards;
+  }
+  @keyframes scan { from{top:0;opacity:1} to{top:100%;opacity:0} }
+  .header {
+    display: flex; align-items: center; gap: 8px; margin-bottom: 14px;
+    font-size: 10px; letter-spacing: 2px; text-transform: uppercase;
+    color: var(--hud-primary); font-family: 'Courier New', monospace;
+  }
+  .header-dot { width:6px; height:6px; border-radius:50%; background:var(--hud-primary); animation:blink 1.5s infinite; }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+  /* Treemap container */
+  .treemap {
+    position: relative;
+    width: 100%; height: 260px;
+    overflow: hidden;
+  }
+
+  .tree-block {
+    position: absolute;
+    overflow: hidden;
+    cursor: pointer;
+    opacity: 0;
+    transform: scale(0.7);
+    animation: block-grow 0.5s cubic-bezier(0.16,1,0.3,1) forwards;
+    transition: filter 0.2s;
+    border: 1px solid rgba(10,15,30,0.4);
+  }
+  .tree-block:hover { filter: brightness(1.25) !important; z-index: 5; }
+
+  @keyframes block-grow {
+    to { opacity: 1; transform: scale(1); }
+  }
+
+  .block-inner {
+    width: 100%; height: 100%;
+    display: flex; flex-direction: column;
+    justify-content: flex-end; padding: 6px 8px;
+    position: relative;
+  }
+  .block-sector {
+    font-size: 10px; font-family: 'Courier New', monospace;
+    color: rgba(255,255,255,0.9); font-weight: bold;
+    letter-spacing: 0.5px; text-transform: uppercase;
+    opacity: 0; animation: fade-label 0.3s ease forwards;
+  }
+  .block-monto {
+    font-size: 9px; font-family: 'Courier New', monospace;
+    color: rgba(255,255,255,0.6); margin-top: 1px;
+    opacity: 0; animation: fade-label 0.3s ease forwards;
+  }
+  @keyframes fade-label { to { opacity:1; } }
+
+  /* Mini stat bar inside block */
+  .block-stat {
+    position: absolute; top: 6px; right: 6px;
+    display: flex; gap: 2px; align-items: flex-end;
+  }
+  .stat-bar {
+    width: 4px; border-radius: 1px;
+  }
+
+  /* Tooltip */
+  .tooltip {
+    position: fixed; background: rgba(10,15,30,0.98);
+    border: 1px solid rgba(99,179,237,0.3); padding: 8px 12px;
+    font-size: 10px; font-family: 'Courier New', monospace; color: #e2e8f0;
+    opacity: 0; transition: opacity 0.15s; pointer-events: none;
+    clip-path: polygon(6px 0%,100% 0%,100% calc(100% - 6px),calc(100% - 6px) 100%,0% 100%,0% 6px);
+    z-index: 100; line-height: 1.6;
+  }
+</style>
+</head>
+<body>
+<div class="panel">
+  <div class="scan-line"></div>
+  <div class="header">
+    <div class="header-dot"></div>
+    A7 · SECTORES · MONTO USD
+  </div>
+  <div class="treemap" id="treemap"></div>
+</div>
+<div class="tooltip" id="tooltip"></div>
+
+<script>
+const DATA = [
+  { sector: "Banca",      monto_usd: 1850000, adjudicadas: 12, activas: 8 },
+  { sector: "Retail",     monto_usd: 1200000, adjudicadas: 8,  activas: 5 },
+  { sector: "Minería",    monto_usd: 950000,  adjudicadas: 5,  activas: 3 },
+  { sector: "Telecom",    monto_usd: 680000,  adjudicadas: 4,  activas: 6 },
+  { sector: "Gobierno",   monto_usd: 520000,  adjudicadas: 3,  activas: 4 },
+  { sector: "Salud",      monto_usd: 340000,  adjudicadas: 2,  activas: 2 },
+];
+
+// Palette per sector
+const COLORS = [
+  { bg: 'rgba(99,179,237,0.22)',  border: 'rgba(99,179,237,0.5)' },
+  { bg: 'rgba(104,211,145,0.20)', border: 'rgba(104,211,145,0.5)' },
+  { bg: 'rgba(246,173,85,0.20)',  border: 'rgba(246,173,85,0.5)' },
+  { bg: 'rgba(159,122,234,0.20)', border: 'rgba(159,122,234,0.5)' },
+  { bg: 'rgba(252,129,129,0.18)', border: 'rgba(252,129,129,0.4)' },
+  { bg: 'rgba(99,179,237,0.14)',  border: 'rgba(99,179,237,0.3)' },
+];
+
+// Simple squarified treemap
+DATA.sort((a,b) => b.monto_usd - a.monto_usd);
+const totalMonto = DATA.reduce((s,d) => s+d.monto_usd, 0);
+const W = 340, H = 260; // inner treemap dimensions
+
+// Naive row-based treemap
+function layoutTreemap(data, w, h) {
+  const rects = [];
+  let x = 0, y = 0, remainH = h;
+
+  let i = 0;
+  while (i < data.length) {
+    // decide row width
+    const rowRatio = 0.5 + (i === 0 ? 0.15 : 0);
+    const rowW = w * rowRatio;
+    let rowMonto = 0;
+    let j = i;
+    while (j < data.length && rowMonto / totalMonto < (rowRatio * remainH / h)) {
+      rowMonto += data[j].monto_usd;
+      j++;
+    }
+    if (j === i) j = i + 1; // at least 1
+    // place items in this row
+    let rowY = y;
+    for (let k = i; k < j; k++) {
+      const itemH = (data[k].monto_usd / rowMonto) * remainH;
+      rects.push({ d: data[k], x, y: rowY, w: rowW, h: itemH });
+      rowY += itemH;
+    }
+    x += rowW;
+    w -= rowW;
+    i = j;
+  }
+  return rects;
+}
+
+const rects = layoutTreemap(DATA, W, H);
+const container = document.getElementById('treemap');
+const tooltip = document.getElementById('tooltip');
+
+rects.forEach((rect, i) => {
+  const col = COLORS[i % COLORS.length];
+  const block = document.createElement('div');
+  block.className = 'tree-block';
+  block.style.left = rect.x + 'px';
+  block.style.top = rect.y + 'px';
+  block.style.width = rect.w + 'px';
+  block.style.height = rect.h + 'px';
+  block.style.background = col.bg;
+  block.style.borderColor = col.border;
+  block.style.animationDelay = (0.3 + i * 0.08) + 's';
+
+  const labelDelay = (0.3 + i * 0.08 + 0.2);
+  const maxBar = Math.max(rect.d.adjudicadas, rect.d.activas);
+  const barAlt = Math.min(rect.h * 0.4, 20);
+  const barH1 = (rect.d.adjudicadas / maxBar) * barAlt;
+  const barH2 = (rect.d.activas / maxBar) * barAlt;
+
+  block.innerHTML = `
+    <div class="block-inner">
+      <div class="block-stat">
+        <div class="stat-bar" style="height:${barH1}px;background:${col.border};opacity:0.8" title="adj: ${rect.d.adjudicadas}"></div>
+        <div class="stat-bar" style="height:${barH2}px;background:rgba(246,173,85,0.7)" title="act: ${rect.d.activas}"></div>
+      </div>
+      ${rect.h > 40 ? `<div class="block-sector" style="animation-delay:${labelDelay}s">${rect.d.sector}</div>` : ''}
+      ${rect.h > 55 ? `<div class="block-monto" style="animation-delay:${labelDelay + 0.05}s">$${(rect.d.monto_usd/1000).toFixed(0)}K</div>` : ''}
+    </div>
+  `;
+
+  block.addEventListener('mousemove', (e) => {
+    tooltip.style.opacity = '1';
+    tooltip.innerHTML = `
+      <div style="color:${col.border};margin-bottom:4px">${rect.d.sector}</div>
+      <div>Monto: <b>$${(rect.d.monto_usd/1000).toFixed(0)}K USD</b></div>
+      <div>Adjudicadas: <b style="color:var(--hud-success)">${rect.d.adjudicadas}</b></div>
+      <div>Activas: <b style="color:var(--hud-warning)">${rect.d.activas}</b></div>
+    `;
+    tooltip.style.left = (e.clientX + 12) + 'px';
+    tooltip.style.top = (e.clientY - 10) + 'px';
+  });
+  block.addEventListener('mouseleave', () => { tooltip.style.opacity = '0'; });
+
+  container.appendChild(block);
+});
+</script>
+</body>
+</html>

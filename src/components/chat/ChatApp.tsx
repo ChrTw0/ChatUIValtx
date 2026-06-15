@@ -3,18 +3,16 @@ import { useChat } from '../../hooks/useChat';
 import { useDraftPanel } from '../../hooks/useDraftPanel';
 import { Navbar } from '../ui/Navbar';
 import { MessageList } from '../ui/MessageList';
-import { QuickReplies } from '../ui/QuickReplies';
 import { Composer } from '../ui/Composer';
 import { DraftPanel } from '../ui/DraftPanel';
 import { sendMessage } from '../../api/chat';
 import { getOrCreateSessionId } from '../../utils/session';
 import { EJECUTIVO_ID } from '../../constants';
-import type { QuickReplyItemProps } from '@chatui/core';
 import type { DraftData } from '../../types/api';
 
 export function ChatApp() {
   const panel = useDraftPanel();
-  const { messages, typing, quickReplies, qrVisible, hitl, enviar, adjuntar, isThinking } = useChat(
+  const { messages, thinking, thinkingFase, enviar, adjuntar } = useChat(
     (draft: DraftData) => panel.abrir(draft)
   );
 
@@ -46,24 +44,15 @@ export function ChatApp() {
 
           <MessageList
             messages={messages}
-            typing={typing}
+            thinkingFase={thinkingFase}
             onVerBorrador={(draft) => panel.abrir(draft)}
-          />
-
-          <QuickReplies
-            items={quickReplies.map((qr: QuickReplyItemProps) => ({
-              code: String(qr.code),
-              name: qr.name ?? '',
-            }))}
-            pregunta={hitl.activo ? hitl.pregunta : undefined}
-            visible={qrVisible}
-            onSelect={(code) => enviar('', code)}
+            onHitlSelect={(valor) => enviar('', valor)}
           />
 
           <Composer
             onSend={(text) => enviar(text)}
             onAttach={adjuntar}
-            disabled={isThinking.current}
+            disabled={thinking}
           />
         </div>
 

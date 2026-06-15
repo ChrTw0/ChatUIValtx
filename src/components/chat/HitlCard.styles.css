@@ -1,0 +1,88 @@
+.HitlCard {
+  margin-top: 10px;
+}
+
+/* Cápsulas inline (UX mockup COMP-13) */
+.HitlCard-capsules {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.HitlCard-capsule {
+  padding: 6px 14px;
+  border: 1.5px solid var(--color-line-2);
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-text-2);
+  background: var(--color-fill-1);
+  cursor: pointer;
+  font-family: inherit;
+  transition: border-color 0.15s, background 0.15s, color 0.15s, opacity 0.15s;
+  opacity: 0;
+  transform: translateY(4px);
+  animation: fadeInUp 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
+}
+
+.HitlCard-capsule:hover:not(:disabled) {
+  border-color: var(--brand-1);
+  color: var(--brand-1);
+}
+
+.HitlCard-capsule--selected {
+  border-color: var(--brand-1);
+  background: var(--brand-4);
+  color: var(--brand-1);
+}
+
+.HitlCard-capsule--dismissed {
+  opacity: 0.3;
+  pointer-events: none;
+}
+
+/* Input de texto libre */
+.HitlCard-input-area {
+  display: flex;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.HitlCard-input {
+  flex: 1;
+  border: 1.5px solid var(--color-line-2);
+  border-radius: var(--radius-md);
+  padding: 7px 10px;
+  font-size: 13px;
+  font-family: inherit;
+  color: var(--color-text-1);
+  background: var(--color-fill-1);
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.HitlCard-input:focus {
+  border-color: var(--brand-1);
+}
+
+.HitlCard-input-send {
+  padding: 7px 12px;
+  border: none;
+  border-radius: var(--radius-md);
+  background: var(--brand-1);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.HitlCard-input-send:hover:not(:disabled) {
+  opacity: 0.88;
+}
+
+.HitlCard-input-send:disabled {
+  opacity: 0.4;
+  cursor: default;
+}

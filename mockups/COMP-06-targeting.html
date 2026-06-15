@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>COMP-06 — A7 Targeting</title>
+<style>
+  :root {
+    --hud-primary:  #63B3ED;
+    --hud-success:  #68D391;
+    --hud-warning:  #F6AD55;
+    --hud-critical: #FC8181;
+    --hud-bg:       rgba(10, 15, 30, 0.95);
+    --hud-border:   rgba(99, 179, 237, 0.25);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #0a0f1e; display: flex; align-items: center; justify-content: center;
+    min-height: 100vh; font-family: system-ui, sans-serif; color: #e2e8f0; padding: 40px;
+  }
+  .panel {
+    width: 360px; padding: 20px;
+    background: var(--hud-bg); border: 1px solid var(--hud-border);
+    clip-path: polygon(14px 0%, 100% 0%, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0% 100%, 0% 14px);
+    position: relative; overflow: hidden;
+    animation: hud-reveal 0.6s ease forwards;
+  }
+  @keyframes hud-reveal { 0%{opacity:0.3} 100%{opacity:1} }
+  .scan-line {
+    position: absolute; left:0; right:0; height:1px; top:0;
+    background: linear-gradient(90deg, transparent, var(--hud-primary), transparent);
+    box-shadow: 0 0 8px var(--hud-primary); animation: scan 0.8s ease-out forwards;
+  }
+  @keyframes scan { from{top:0;opacity:1} to{top:100%;opacity:0} }
+  .header {
+    display: flex; align-items: center; gap: 8px; margin-bottom: 14px;
+    font-size: 10px; letter-spacing: 2px; text-transform: uppercase;
+    color: var(--hud-primary); font-family: 'Courier New', monospace;
+  }
+  .header-dot { width:6px; height:6px; border-radius:50%; background:var(--hud-primary); animation:blink 1.5s infinite; }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+  /* Query */
+  .query-row {
+    font-size: 10px; font-family: 'Courier New', monospace;
+    color: rgba(226,232,240,0.35); margin-bottom: 14px;
+  }
+  .query-row span { color: rgba(99,179,237,0.8); }
+
+  /* Field de targeting */
+  .target-field {
+    position: relative; height: 180px; margin-bottom: 14px;
+    border: 1px solid rgba(99,179,237,0.1); border-radius: 2px;
+    overflow: hidden;
+  }
+
+  /* Candidatos como puntos en el campo */
+  .candidate-dot {
+    position: absolute;
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    background: rgba(99,179,237,0.12);
+    border: 1px solid rgba(99,179,237,0.4);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 9px; font-family: 'Courier New', monospace;
+    color: rgba(99,179,237,0.7);
+    cursor: pointer;
+    transform: translate(-50%, -50%);
+    transition: all 0.3s cubic-bezier(0.16,1,0.3,1);
+    opacity: 0;
+    animation: scatter-in 0.4s cubic-bezier(0.16,1,0.3,1) forwards;
+  }
+  @keyframes scatter-in { to { opacity:1; } }
+
+  .candidate-dot:hover {
+    background: rgba(99,179,237,0.2);
+    border-color: var(--hud-primary);
+    transform: translate(-50%, -50%) scale(1.15) !important;
+  }
+  .candidate-dot.dimmed {
+    opacity: 0.2 !important;
+    pointer-events: none;
+  }
+  .candidate-dot.locked {
+    background: rgba(104,211,145,0.15) !important;
+    border-color: var(--hud-success) !important;
+    color: var(--hud-success) !important;
+    box-shadow: 0 0 12px rgba(104,211,145,0.4);
+    animation: none;
+  }
+
+  /* Reticle SVG — cierra sobre el candidato */
+  .reticle-svg {
+    position: absolute;
+    pointer-events: none;
+    transform: translate(-50%, -50%);
+    transition: all 0.6s cubic-bezier(0.16,1,0.3,1);
+    opacity: 0;
+    animation: reticle-in 0.5s cubic-bezier(0.16,1,0.3,1) 0.3s forwards;
+  }
+  @keyframes reticle-in { to { opacity: 1; } }
+
+  .reticle-arc {
+    fill: none; stroke: var(--hud-primary); stroke-width: 1.5;
+    opacity: 0.8;
+  }
+  .reticle-arc.closing {
+    animation: arc-close 0.6s cubic-bezier(0.16,1,0.3,1) forwards;
+  }
+  @keyframes arc-close {
+    0%   { stroke-dashoffset: 40; opacity: 0.3; }
+    100% { stroke-dashoffset: 0;  opacity: 0.9; }
+  }
+
+  /* Tooltip */
+  .tooltip {
+    position: absolute;
+    background: rgba(10,15,30,0.95);
+    border: 1px solid rgba(99,179,237,0.3);
+    padding: 6px 10px;
+    font-size: 10px; font-family: 'Courier New', monospace;
+    color: #e2e8f0; pointer-events: none;
+    opacity: 0; transition: opacity 0.2s;
+    white-space: nowrap;
+    clip-path: polygon(6px 0%,100% 0%,100% calc(100% - 6px),calc(100% - 6px) 100%,0% 100%,0% 6px);
+    z-index: 10;
+  }
+
+  /* Lista de candidatos */
+  .candidate-list { display: flex; flex-direction: column; gap: 6px; }
+  .candidate-row {
+    display: flex; align-items: center; gap: 10px; padding: 6px 10px;
+    border: 1px solid rgba(99,179,237,0.15); border-radius: 3px;
+    cursor: pointer; font-size: 11px; font-family: 'Courier New', monospace;
+    opacity: 0; animation: slide-in 0.3s ease forwards;
+    transition: background 0.2s, border-color 0.2s;
+  }
+  .candidate-row:hover { background: rgba(99,179,237,0.08); border-color: rgba(99,179,237,0.4); }
+  .candidate-row.selected {
+    background: rgba(104,211,145,0.1); border-color: rgba(104,211,145,0.5);
+    color: var(--hud-success);
+  }
+  @keyframes slide-in { to { opacity:1; } }
+  .cand-idx { color: rgba(99,179,237,0.5); width: 14px; }
+  .cand-info { flex:1; }
+  .cand-cliente { color: #e2e8f0; }
+  .cand-meta { font-size: 9px; color: rgba(226,232,240,0.3); margin-top: 1px; }
+  .cand-etapa {
+    font-size: 9px; padding: 2px 5px; border-radius: 2px;
+    background: rgba(99,179,237,0.1); color: rgba(99,179,237,0.7);
+  }
+</style>
+</head>
+<body>
+<div class="panel">
+  <div class="scan-line"></div>
+  <div class="header">
+    <div class="header-dot"></div>
+    A7 · GESTOR OPP · RASTREANDO
+  </div>
+  <div class="query-row">QUERY · <span id="query-label">"proyecto erp"</span> · <span id="total-label">4</span> CANDIDATOS</div>
+
+  <div class="target-field" id="target-field">
+    <div class="tooltip" id="tooltip"></div>
+  </div>
+
+  <div class="candidate-list" id="candidate-list"></div>
+</div>
+
+<script>
+const DATA = {
+  query: "proyecto erp",
+  candidatos: [
+    { id: "OPP-0012", cliente: "CLIENTE ALFA", descripcion: "Proyecto ERP integración 2024", etapa: "EN_PROPUESTA",    tipo_actual: "A" },
+    { id: "OPP-0034", cliente: "CLIENTE BETA", descripcion: "Modernización ERP legacy",       etapa: "CLASIFICADA",     tipo_actual: "B" },
+    { id: "OPP-0058", cliente: "CLIENTE GAMMA",descripcion: "ERP módulo financiero",          etapa: "RECIBIDA",        tipo_actual: "C" },
+    { id: "OPP-0071", cliente: "CLIENTE DELTA", descripcion: "Sistema ERP nube",              etapa: "PROPUESTA_ENVIADA",tipo_actual: "A" },
+  ],
+};
+
+const positions = [
+  { x: 25, y: 30 }, { x: 65, y: 60 }, { x: 45, y: 75 }, { x: 78, y: 25 }
+];
+
+const field = document.getElementById('target-field');
+const tooltip = document.getElementById('tooltip');
+let selectedIdx = null;
+
+// Draw dots
+DATA.candidatos.forEach((c, i) => {
+  const dot = document.createElement('div');
+  dot.className = 'candidate-dot';
+  dot.style.left = positions[i].x + '%';
+  dot.style.top = positions[i].y + '%';
+  dot.style.animationDelay = (0.3 + i * 0.08) + 's';
+  dot.textContent = (i + 1);
+  dot.id = 'dot-' + i;
+
+  // Reticle on first candidate
+  if (i === 0) {
+    const reticle = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    reticle.setAttribute('width', '60'); reticle.setAttribute('height', '60');
+    reticle.setAttribute('viewBox', '0 0 60 60');
+    reticle.className = 'reticle-svg';
+    reticle.style.left = positions[0].x + '%';
+    reticle.style.top = positions[0].y + '%';
+    // 4 arcs
+    const arcs = [
+      'M 10,30 A 20,20 0 0,1 30,10',
+      'M 50,30 A 20,20 0 0,1 30,50',
+      'M 30,10 A 20,20 0 0,1 50,30',
+      'M 30,50 A 20,20 0 0,1 10,30',
+    ];
+    arcs.forEach((d, ai) => {
+      const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      path.setAttribute('d', d);
+      path.setAttribute('class', 'reticle-arc closing');
+      path.setAttribute('stroke-dasharray', '40');
+      path.setAttribute('stroke-dashoffset', '40');
+      path.style.animationDelay = (0.4 + ai * 0.05) + 's';
+      reticle.appendChild(path);
+    });
+    field.appendChild(reticle);
+  }
+
+  dot.addEventListener('mouseenter', (e) => {
+    tooltip.style.opacity = '1';
+    tooltip.innerHTML = `<div style="color:var(--hud-primary)">${c.cliente}</div><div style="color:rgba(226,232,240,0.5);font-size:9px">${c.etapa}</div>`;
+    const rect = field.getBoundingClientRect();
+    tooltip.style.left = (e.clientX - rect.left + 12) + 'px';
+    tooltip.style.top = (e.clientY - rect.top - 10) + 'px';
+  });
+  dot.addEventListener('mouseleave', () => { tooltip.style.opacity = '0'; });
+
+  dot.addEventListener('click', () => {
+    selectedIdx = i;
+    document.querySelectorAll('.candidate-dot').forEach((d, di) => {
+      d.className = 'candidate-dot ' + (di === i ? 'locked' : 'dimmed');
+    });
+    document.querySelectorAll('.candidate-row').forEach((r, ri) => {
+      r.className = 'candidate-row ' + (ri === i ? 'selected' : '');
+    });
+  });
+
+  field.appendChild(dot);
+});
+
+// List
+const list = document.getElementById('candidate-list');
+DATA.candidatos.forEach((c, i) => {
+  const row = document.createElement('div');
+  row.className = 'candidate-row';
+  row.style.animationDelay = (0.6 + i * 0.07) + 's';
+  row.innerHTML = `
+    <span class="cand-idx">${i + 1}</span>
+    <div class="cand-info">
+      <div class="cand-cliente">${c.cliente}</div>
+      <div class="cand-meta">${c.descripcion}</div>
+    </div>
+    <span class="cand-etapa">${c.etapa}</span>
+  `;
+  row.addEventListener('click', () => {
+    selectedIdx = i;
+    document.querySelectorAll('.candidate-dot').forEach((d, di) => {
+      d.className = 'candidate-dot ' + (di === i ? 'locked' : 'dimmed');
+    });
+    document.querySelectorAll('.candidate-row').forEach((r, ri) => {
+      r.className = 'candidate-row ' + (ri === i ? 'selected' : '');
+    });
+  });
+  list.appendChild(row);
+});
+</script>
+</body>
+</html>

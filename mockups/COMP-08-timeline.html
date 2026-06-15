@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>COMP-08 — Timeline de oportunidad</title>
+<style>
+  :root {
+    --brand-1: #ff6200;
+    --brand-3: #ffe0cc;
+    --brand-4: #ffefe5;
+    --white:   #fff;
+    --gray-1:  #1a1a1a;
+    --gray-3:  #555;
+    --gray-4:  #888;
+    --gray-5:  #bbb;
+    --gray-6:  #ddd;
+    --gray-7:  #eee;
+    --gray-8:  #f7f7f7;
+    --radius-sm: 6px;
+    --radius-md: 10px;
+    --shadow-1: 0 3px 4px rgba(0,0,0,.04);
+    --shadow-2: 0 4px 8px rgba(0,0,0,.08);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--gray-8);
+    display: flex; align-items: flex-start; justify-content: center;
+    min-height: 100vh; padding: 32px;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-size: 14px; color: var(--gray-1);
+  }
+
+  .panel {
+    background: var(--white);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-1);
+    width: 340px;
+    animation: fadeInUp 0.25s cubic-bezier(.25,.46,.45,.94) both;
+  }
+  @keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .panel-header {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--gray-7);
+  }
+  .panel-title   { font-size: 13px; font-weight: 600; margin-bottom: 1px; }
+  .panel-cliente { font-size: 11px; color: var(--gray-4); }
+
+  .panel-body {
+    padding: 12px 14px 14px;
+    max-height: 500px; overflow-y: auto;
+  }
+  .panel-body::-webkit-scrollbar { width: 3px; }
+  .panel-body::-webkit-scrollbar-thumb { background: var(--gray-6); border-radius: 2px; }
+
+  /* Timeline */
+  .timeline { position: relative; }
+  .tl-line {
+    position: absolute; left: 5px; top: 8px; bottom: 8px;
+    width: 1px; background: var(--gray-7);
+  }
+  .tl-fill {
+    width: 100%; background: var(--gray-5); border-radius: 1px;
+    height: 0; transition: height 1s cubic-bezier(.25,.46,.45,.94);
+  }
+
+  /* Evento */
+  .event {
+    display: flex; gap: 11px; margin-bottom: 2px;
+    opacity: 0; transform: translateY(6px);
+    animation: ev-in 0.25s cubic-bezier(.25,.46,.45,.94) both;
+  }
+  @keyframes ev-in { to { opacity:1; transform:translateY(0); } }
+
+  /* Dot — solo color, sin letra */
+  .event-dot {
+    flex-shrink: 0; margin-top: 12px;
+    width: 11px; height: 11px; border-radius: 50%;
+    background: var(--white);
+    border: 2px solid var(--gray-5);
+    position: relative; z-index: 1;
+    transform: scale(0);
+    animation: dot-pop 0.2s cubic-bezier(.25,.46,.45,.94) both;
+  }
+  @keyframes dot-pop { to { transform: scale(1); } }
+  .dot-documento    { border-color: var(--brand-1); }
+  .dot-reunion      { border-color: #22c55e; }
+  .dot-cambio_etapa { border-color: var(--gray-4); background: var(--gray-7); }
+  .dot-draft        { border-color: #6366f1; }
+  .dot-nota         { border-color: var(--gray-5); }
+
+  /* Card */
+  .event-card {
+    flex: 1; margin-bottom: 8px;
+    border: 1px solid var(--gray-7);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+    cursor: pointer;
+    transition: border-color 0.15s;
+  }
+  .event-card:hover { border-color: var(--gray-6); }
+  .event-card.open  { border-color: var(--gray-6); box-shadow: var(--shadow-1); }
+
+  .card-head {
+    padding: 8px 10px;
+    display: flex; justify-content: space-between; align-items: flex-start; gap: 8px;
+  }
+
+  /* Meta: badge tipo + actor + fecha en una fila */
+  .card-meta {
+    display: flex; align-items: center; gap: 5px; margin-bottom: 4px; flex-wrap: wrap;
+  }
+  .card-tipo {
+    font-size: 9px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.4px; padding: 1px 5px; border-radius: 3px;
+  }
+  .tipo-documento    { background: var(--brand-4); color: var(--brand-1); }
+  .tipo-reunion      { background: #f0fdf4; color: #16a34a; }
+  .tipo-cambio_etapa { background: var(--gray-7); color: var(--gray-4); }
+  .tipo-nota         { background: var(--gray-7); color: var(--gray-4); }
+  .tipo-draft        { background: #eef2ff; color: #4f46e5; }
+
+  .card-actor { font-size: 10px; font-weight: 600; color: var(--gray-4); }
+  .card-date  { font-size: 10px; color: var(--gray-5); white-space: nowrap; flex-shrink: 0; }
+
+  /* Resumen — 2 líneas truncadas por defecto */
+  .card-resumen {
+    font-size: 12px; color: var(--gray-3); line-height: 1.5;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    transition: none;
+  }
+  .event-card.open .card-resumen {
+    display: block; /* quita el clamp */
+    overflow: visible;
+    padding-bottom: 8px;
+  }
+
+  /* Indicador "ver más" */
+  .card-more {
+    font-size: 10px; color: var(--gray-5);
+    margin-top: 2px; display: none;
+  }
+  .needs-expand .card-more { display: block; }
+  .event-card.open .card-more { display: none; }
+</style>
+</head>
+<body>
+<div class="panel">
+  <div class="panel-header">
+    <div class="panel-title">Timeline</div>
+    <div class="panel-cliente">YURA · Soporte Hardware Servidores</div>
+  </div>
+  <div class="panel-body">
+    <div class="timeline" id="timeline">
+      <div class="tl-line"><div class="tl-fill" id="tl-fill"></div></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const EVENTS = [
+  { tipo:'documento', fecha:'2025-06-07', actor:'LL',
+    resumen:'Desarrollo de la propuesta Soporte Hardware de Servidores para el periodo jun2025 a junio2026 para YURA. Se remite PTE y FR v1.0 a JB.' },
+  { tipo:'reunion',   fecha:'2025-06-07', actor:'LL',
+    resumen:'Reunion TI para revisar propuesta Soporte Hardware de Servidores para el periodo jun2025 a junio2026 para YURA.' },
+  { tipo:'documento', fecha:'2025-07-07', actor:'PQ',
+    resumen:'Actualización de la propuesta Soporte hardware de Servidores para el periodo junio 2025 a junio 2026 para YURA. Se remite PTE y FR v1.1 a JB.' },
+  { tipo:'documento', fecha:'2025-07-14', actor:'JB',
+    resumen:'Se actualiza la propuesta Soporte de Hardware de Servidores periodo junio 2025 a junio 2026 y la adición del servicio adicional mantenimiento preventivo de servidores. Se ha colocado servicio en sitio (Arequipa-Yura) con 5 jornadas de 12 horas, incluye pasaje y estadía por 5 días. Se remite PTE y FR v1.2 a JB.' },
+  { tipo:'documento', fecha:'2025-07-14', actor:'JB',
+    resumen:'Se actualiza la propuesta Soporte Hardware de Servidores, incluye el retiro de los gastos de transporte/viáticos y se coloca dentro del servicio de mantenimiento de servidores como precio único. Se remite PTE y FR v1.3 a JB.' },
+  { tipo:'documento', fecha:'2025-07-14', actor:'MS',
+    resumen:'Se actualiza propuesta Soporte Hardware de Servidores para YURA, retirando la columna unidades e ítem de los títulos del servicio. Se remite PTE y FR v1.4 a JB.' },
+  { tipo:'documento', fecha:'2025-07-14', actor:'JB',
+    resumen:'Se actualiza la propuesta que incluye el mantenimiento preventivo según lo conversado. Los costos están basados con el apoyo de un especialista de la zona de Arequipa. Se remite PTE y FR v1.5 a JB.' },
+  { tipo:'documento', fecha:'2025-07-21', actor:'MS',
+    resumen:'De acuerdo a lo revisado en reunión, se actualiza la propuesta que cambia el servicio a revisión preventiva y se incrementa el margen para YURA. Se remite PTE y FR v1.6 a JB.' },
+];
+
+function formatFecha(iso) {
+  const [y,m,d] = iso.split('-');
+  const meses = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+  return `${parseInt(d)} ${meses[parseInt(m)-1]} ${y.slice(2)}`;
+}
+
+const timeline = document.getElementById('timeline');
+
+EVENTS.forEach((ev, i) => {
+  const div = document.createElement('div');
+  div.className = 'event';
+  div.style.animationDelay = (i * 0.055) + 's';
+
+  const dot = document.createElement('div');
+  dot.className = `event-dot dot-${ev.tipo}`;
+  dot.style.animationDelay = (i * 0.055) + 's';
+
+  const card = document.createElement('div');
+  card.className = 'event-card';
+  card.innerHTML = `
+    <div class="card-head">
+      <div style="flex:1;min-width:0">
+        <div class="card-meta">
+          <span class="card-tipo tipo-${ev.tipo}">${ev.tipo.replace('_',' ')}</span>
+          <span class="card-actor">${ev.actor}</span>
+        </div>
+        <div class="card-resumen">${ev.resumen}</div>
+        <div class="card-more">ver más</div>
+      </div>
+      <span class="card-date">${formatFecha(ev.fecha)}</span>
+    </div>
+  `;
+
+  // Detectar si el texto necesita expand (más de 2 líneas)
+  // Lo hacemos después de insertar en el DOM
+  card.addEventListener('click', () => card.classList.toggle('open'));
+
+  div.appendChild(dot);
+  div.appendChild(card);
+  timeline.appendChild(div);
+});
+
+// Marcar cards que realmente tienen overflow
+requestAnimationFrame(() => {
+  document.querySelectorAll('.event-card').forEach(card => {
+    const resumen = card.querySelector('.card-resumen');
+    if (resumen.scrollHeight > resumen.clientHeight + 2) {
+      card.classList.add('needs-expand');
+    }
+  });
+  document.getElementById('tl-fill').style.height = '100%';
+});
+</script>
+</body>
+</html>

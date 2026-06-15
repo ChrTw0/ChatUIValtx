@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>COMP-05 — A5 Radar de inteligencia</title>
+<style>
+  :root {
+    --hud-primary:  #63B3ED;
+    --hud-success:  #68D391;
+    --hud-warning:  #F6AD55;
+    --hud-critical: #FC8181;
+    --hud-bg:       rgba(10, 15, 30, 0.95);
+    --hud-border:   rgba(99, 179, 237, 0.25);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #0a0f1e; display: flex; align-items: center; justify-content: center;
+    min-height: 100vh; font-family: system-ui, sans-serif; color: #e2e8f0; padding: 40px;
+  }
+  .panel {
+    width: 360px; padding: 20px;
+    background: var(--hud-bg);
+    border: 1px solid var(--hud-border);
+    clip-path: polygon(14px 0%, 100% 0%, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0% 100%, 0% 14px);
+    position: relative; overflow: hidden;
+    animation: hud-reveal 0.6s ease forwards;
+  }
+  @keyframes hud-reveal { 0%{opacity:0.3} 100%{opacity:1} }
+  .scan-line {
+    position: absolute; left:0; right:0; height:1px; top:0;
+    background: linear-gradient(90deg, transparent, var(--hud-primary), transparent);
+    box-shadow: 0 0 8px var(--hud-primary);
+    animation: scan 0.8s ease-out forwards;
+  }
+  @keyframes scan { from{top:0;opacity:1} to{top:100%;opacity:0} }
+  .header {
+    display: flex; align-items: center; gap: 8px; margin-bottom: 14px;
+    font-size: 10px; letter-spacing: 2px; text-transform: uppercase;
+    color: var(--hud-primary); font-family: 'Courier New', monospace;
+  }
+  .header-dot { width:6px; height:6px; border-radius:50%; background:var(--hud-primary); animation: blink 1.5s infinite; }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+  /* Radar SVG */
+  .radar-wrapper {
+    display: flex; justify-content: center; margin: 10px 0 16px;
+    position: relative;
+  }
+  .radar-svg { overflow: visible; }
+
+  /* Confianza glow var */
+  .radar-area {
+    fill: rgba(99,179,237,0.15);
+    stroke: var(--hud-primary);
+    stroke-width: 1.5;
+    filter: drop-shadow(0 0 6px rgba(99,179,237,0.5));
+    opacity: 0;
+    animation: radar-fill 1.2s cubic-bezier(0.16,1,0.3,1) 0.5s forwards;
+  }
+  @keyframes radar-fill { 0%{opacity:0} 100%{opacity:1} }
+  .radar-axis { stroke: rgba(99,179,237,0.2); stroke-width: 1; }
+  .radar-circle { fill:none; stroke: rgba(99,179,237,0.1); stroke-width:1; }
+  .axis-label {
+    font-size: 9px; fill: rgba(226,232,240,0.5);
+    font-family: 'Courier New', monospace; text-anchor: middle;
+  }
+
+  /* Competitors */
+  .competitors {
+    display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px;
+  }
+  .competitor {
+    border-radius: 50%;
+    background: rgba(252,129,129,0.15);
+    border: 1px solid rgba(252,129,129,0.4);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 9px; color: var(--hud-critical);
+    font-family: 'Courier New', monospace; text-align: center;
+    padding: 4px;
+    opacity: 0; transform: scale(0);
+    animation: pop-in 0.3s cubic-bezier(0.16,1,0.3,1) forwards;
+    cursor: pointer; transition: transform 0.2s;
+  }
+  .competitor:hover { transform: scale(1.1) !important; }
+  @keyframes pop-in { to { opacity:1; transform:scale(1); } }
+
+  .section-label {
+    font-size: 9px; letter-spacing: 2px; text-transform: uppercase;
+    color: rgba(226,232,240,0.4); margin-bottom: 8px;
+    font-family: 'Courier New', monospace;
+  }
+
+  /* Resumen blurIn simulado */
+  .resumen {
+    font-size: 11px; line-height: 1.6; color: rgba(226,232,240,0.7);
+    border-left: 2px solid rgba(99,179,237,0.3);
+    padding-left: 10px; margin-bottom: 14px;
+  }
+  .word { display: inline; opacity: 0; filter: blur(4px); animation: blur-in 0.3s ease forwards; }
+  @keyframes blur-in { to { opacity:1; filter: blur(0); } }
+
+  /* Ventajas / brechas */
+  .lists-row { display: flex; gap: 10px; margin-bottom: 12px; }
+  .list-col { flex: 1; }
+  .list-col .section-label { margin-bottom: 6px; }
+  .list-item {
+    font-size: 10px; font-family: 'Courier New', monospace; padding: 3px 0;
+    border-bottom: 1px solid rgba(99,179,237,0.07);
+    opacity: 0; animation: fade-in 0.3s ease forwards;
+  }
+  @keyframes fade-in { to { opacity:1; } }
+  .item-ok { color: var(--hud-success); }
+  .item-bad { color: var(--hud-critical); }
+
+  /* Confianza row */
+  .conf-row {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 9px; font-family: 'Courier New', monospace;
+    color: rgba(226,232,240,0.4);
+  }
+  .conf-bar { flex:1; height:3px; background:rgba(255,255,255,0.06); border-radius:2px; }
+  .conf-fill { height:100%; border-radius:2px; width:0; transition: width 1.2s cubic-bezier(0.16,1,0.3,1); }
+  .conf-val { color: var(--hud-primary); font-weight:bold; }
+</style>
+</head>
+<body>
+<div class="panel">
+  <div class="scan-line"></div>
+  <div class="header">
+    <div class="header-dot"></div>
+    A5 · INTEL MERCADO · ANALIZANDO
+  </div>
+
+  <div class="radar-wrapper">
+    <svg class="radar-svg" width="200" height="200" viewBox="0 0 200 200" id="radar-svg"></svg>
+  </div>
+
+  <div class="section-label">Competidores probables</div>
+  <div class="competitors" id="competitors-container"></div>
+
+  <div class="resumen" id="resumen"></div>
+
+  <div class="lists-row">
+    <div class="list-col">
+      <div class="section-label" style="color:rgba(104,211,145,0.6)">Ventajas</div>
+      <div id="ventajas"></div>
+    </div>
+    <div class="list-col">
+      <div class="section-label" style="color:rgba(252,129,129,0.6)">Brechas críticas</div>
+      <div id="brechas"></div>
+    </div>
+  </div>
+
+  <div class="conf-row">
+    <span>CONFIANZA</span>
+    <div class="conf-bar"><div class="conf-fill" id="conf-fill" style="background:var(--hud-primary)"></div></div>
+    <span class="conf-val" id="conf-val">0%</span>
+  </div>
+</div>
+
+<script>
+const DATA = {
+  confianza: 0.75,
+  ventajas: ["Precio competitivo", "Experiencia sector"],
+  brechas_criticas: ["Sin cert. ISO", "Equipo reducido"],
+  competidores_probables: [
+    { name: "COMP-A", apariciones: 8 },
+    { name: "COMP-B", apariciones: 5 },
+    { name: "COMP-C", apariciones: 3 },
+    { name: "COMP-D", apariciones: 2 },
+  ],
+  resumen_ejecutivo: "Mercado competitivo con 4 actores frecuentes. Ventaja en precio pero brecha en certificación puede ser decisiva en licitaciones del sector público.",
+};
+
+// Radar
+const cx = 100, cy = 100, r = 75;
+const axes = ["Precio","Plazo","Calidad","Refs","Cert.","Equipo"];
+const values = [0.85, 0.6, 0.7, 0.5, 0.3, 0.65];
+const svg = document.getElementById('radar-svg');
+
+// grid circles
+[0.25, 0.5, 0.75, 1.0].forEach(level => {
+  const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+  circle.setAttribute('cx', cx); circle.setAttribute('cy', cy);
+  circle.setAttribute('r', r * level); circle.setAttribute('class', 'radar-circle');
+  svg.appendChild(circle);
+});
+
+// axes and labels
+const points = [];
+axes.forEach((label, i) => {
+  const angle = (i / axes.length) * Math.PI * 2 - Math.PI / 2;
+  const lx = cx + r * Math.cos(angle);
+  const ly = cy + r * Math.sin(angle);
+  const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+  line.setAttribute('x1', cx); line.setAttribute('y1', cy);
+  line.setAttribute('x2', lx); line.setAttribute('y2', ly);
+  line.setAttribute('class', 'radar-axis');
+  svg.appendChild(line);
+  // value point
+  const vx = cx + r * values[i] * Math.cos(angle);
+  const vy = cy + r * values[i] * Math.sin(angle);
+  points.push([vx, vy]);
+  // label
+  const lpad = 12;
+  const tlx = cx + (r + lpad) * Math.cos(angle);
+  const tly = cy + (r + lpad) * Math.sin(angle);
+  const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+  text.setAttribute('x', tlx); text.setAttribute('y', tly + 3);
+  text.setAttribute('class', 'axis-label');
+  text.textContent = label;
+  svg.appendChild(text);
+});
+
+// filled area
+const polygon = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+polygon.setAttribute('points', points.map(p => p.join(',')).join(' '));
+polygon.setAttribute('class', 'radar-area');
+// glow based on confianza
+const glowBlur = 4 + DATA.confianza * 16;
+polygon.style.filter = `drop-shadow(0 0 ${glowBlur}px rgba(99,179,237,0.6))`;
+svg.appendChild(polygon);
+
+// Competitors
+const compContainer = document.getElementById('competitors-container');
+DATA.competidores_probables.forEach((c, i) => {
+  const size = 28 + c.apariciones * 4;
+  const el = document.createElement('div');
+  el.className = 'competitor';
+  el.style.width = el.style.height = size + 'px';
+  el.style.fontSize = Math.max(8, size / 5) + 'px';
+  el.style.animationDelay = (0.8 + i * 0.06) + 's';
+  el.textContent = c.name;
+  compContainer.appendChild(el);
+});
+
+// Resumen blur-in words
+const resumenEl = document.getElementById('resumen');
+DATA.resumen_ejecutivo.split(' ').forEach((word, i) => {
+  const span = document.createElement('span');
+  span.className = 'word';
+  span.textContent = word + ' ';
+  span.style.animationDelay = (1.2 + i * 0.05) + 's';
+  resumenEl.appendChild(span);
+});
+
+// Ventajas / brechas
+const ventEl = document.getElementById('ventajas');
+DATA.ventajas.forEach((v, i) => {
+  const el = document.createElement('div');
+  el.className = 'list-item item-ok';
+  el.textContent = '+ ' + v;
+  el.style.animationDelay = (1.0 + i * 0.08) + 's';
+  ventEl.appendChild(el);
+});
+const brecEl = document.getElementById('brechas');
+DATA.brechas_criticas.forEach((b, i) => {
+  const el = document.createElement('div');
+  el.className = 'list-item item-bad';
+  el.textContent = '— ' + b;
+  el.style.animationDelay = (1.1 + i * 0.08) + 's';
+  brecEl.appendChild(el);
+});
+
+// Confianza
+const fill = document.getElementById('conf-fill');
+const val = document.getElementById('conf-val');
+setTimeout(() => {
+  const pct = DATA.confianza * 100;
+  fill.style.width = pct + '%';
+  let c = 0;
+  const step = () => {
+    c = Math.min(c + 2, pct);
+    val.textContent = Math.round(c) + '%';
+    if (c < pct) requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step);
+}, 600);
+</script>
+</body>
+</html>

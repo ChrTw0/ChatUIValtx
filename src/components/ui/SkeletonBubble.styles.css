@@ -1,0 +1,43 @@
+.SkeletonBubble {
+  min-width: 180px;
+  max-width: 320px;
+  padding: 12px 14px;
+  border-radius: var(--radius-md);
+  background: var(--color-fill-1);
+  box-shadow: var(--shadow-1);
+  border: 1px solid var(--color-line-2);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  overflow: hidden;
+  position: relative;
+}
+
+.SkeletonBubble::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.65) 50%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  animation: skeletonShimmer 1.4s infinite ease-in-out;
+}
+
+@keyframes skeletonShimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.SkeletonBubble-line {
+  height: 9px;
+  border-radius: 4px;
+  background: var(--gray-7);
+}
+
+.SkeletonBubble-line--long  { width: 92%; }
+.SkeletonBubble-line--mid   { width: 75%; }
+.SkeletonBubble-line--short { width: 52%; }

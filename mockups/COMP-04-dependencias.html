@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>COMP-04 — A4 Monitor de dependencias</title>
+<style>
+  :root {
+    --hud-primary:  #63B3ED;
+    --hud-success:  #68D391;
+    --hud-warning:  #F6AD55;
+    --hud-critical: #FC8181;
+    --hud-bg:       rgba(10, 15, 30, 0.95);
+    --hud-border:   rgba(99, 179, 237, 0.25);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #0a0f1e; display: flex;
+    align-items: center; justify-content: center;
+    min-height: 100vh; font-family: system-ui, sans-serif;
+    color: #e2e8f0; padding: 40px;
+  }
+
+  .panel {
+    width: 360px; padding: 20px;
+    background: var(--hud-bg);
+    border: 1px solid var(--hud-border);
+    clip-path: polygon(14px 0%, 100% 0%, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0% 100%, 0% 14px);
+    position: relative; overflow: hidden;
+    animation: hud-reveal 0.6s cubic-bezier(0.16,1,0.3,1) forwards;
+  }
+  @keyframes hud-reveal {
+    0%   { opacity:0.3; } 100% { opacity:1; }
+  }
+  .scan-line {
+    position: absolute; left:0; right:0; height:1px; top:0;
+    background: linear-gradient(90deg, transparent, var(--hud-primary), transparent);
+    box-shadow: 0 0 8px var(--hud-primary);
+    animation: scan 0.8s ease-out forwards;
+  }
+  @keyframes scan { from{top:0;opacity:1} to{top:100%;opacity:0} }
+
+  .header {
+    display: flex; align-items: center; gap: 8px;
+    margin-bottom: 18px; font-size: 10px; letter-spacing: 2px;
+    text-transform: uppercase; color: var(--hud-primary);
+    font-family: 'Courier New', monospace;
+  }
+  .header-dot {
+    width:6px; height:6px; border-radius:50%;
+    background:var(--hud-primary); animation: blink 1.5s infinite;
+  }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+  /* Resumen stats */
+  .stats-row {
+    display: flex; gap: 8px; margin-bottom: 20px;
+  }
+  .stat {
+    flex: 1; text-align: center; padding: 8px 4px;
+    border: 1px solid rgba(99,179,237,0.15);
+    clip-path: polygon(6px 0%,100% 0%,100% calc(100% - 6px),calc(100% - 6px) 100%,0% 100%,0% 6px);
+  }
+  .stat-num { font-size: 22px; font-weight: bold; font-family: 'Courier New', monospace; }
+  .stat-label { font-size: 9px; letter-spacing: 1px; text-transform: uppercase; color: rgba(226,232,240,0.4); font-family: 'Courier New', monospace; margin-top: 2px; }
+  .stat-total .stat-num { color: var(--hud-primary); }
+  .stat-done  .stat-num { color: var(--hud-success); }
+  .stat-pend  .stat-num { color: var(--hud-warning); }
+  .stat-block .stat-num { color: var(--hud-critical); }
+
+  /* Nodos SVG area */
+  .nodes-area {
+    position: relative;
+    height: 200px;
+    margin-bottom: 16px;
+    border: 1px solid rgba(99,179,237,0.1);
+    border-radius: 4px;
+    overflow: visible;
+  }
+
+  .node-group {
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    opacity: 0;
+    transform: translateY(-20px);
+    animation: node-drop 0.5s cubic-bezier(0.16,1,0.3,1) forwards;
+  }
+  @keyframes node-drop {
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .node {
+    width: 52px; height: 52px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+    position: relative;
+    cursor: pointer;
+    transition: transform 0.2s;
+  }
+  .node:hover { transform: scale(1.15); }
+  .node::after {
+    content: '';
+    position: absolute; inset: -3px;
+    border-radius: 50%; border: 1px solid currentColor;
+    opacity: 0.3;
+  }
+
+  .node-ok {
+    background: rgba(104,211,145,0.15);
+    border: 2px solid var(--hud-success);
+    color: var(--hud-success);
+  }
+  .node-pending {
+    background: rgba(246,173,85,0.12);
+    border: 2px solid var(--hud-warning);
+    color: var(--hud-warning);
+    animation: node-drop 0.5s cubic-bezier(0.16,1,0.3,1) forwards,
+               pulse-pending 2s ease-in-out infinite;
+  }
+  .node-blocked {
+    background: rgba(252,129,129,0.12);
+    border: 2px solid var(--hud-critical);
+    color: var(--hud-critical);
+    animation: node-drop 0.5s cubic-bezier(0.16,1,0.3,1) forwards,
+               pulse-blocked 1.5s ease-in-out infinite;
+  }
+
+  @keyframes pulse-pending {
+    0%,100% { box-shadow: none; }
+    50%      { box-shadow: 0 0 12px rgba(246,173,85,0.4); }
+  }
+  @keyframes pulse-blocked {
+    0%,100% { box-shadow: none; }
+    50%      { box-shadow: 0 0 16px rgba(252,129,129,0.5); }
+  }
+
+  .node-label {
+    font-size: 9px; text-transform: uppercase; letter-spacing: 1px;
+    font-family: 'Courier New', monospace; white-space: nowrap;
+    color: rgba(226,232,240,0.5);
+  }
+
+  /* Connector lines via SVG overlay */
+  .connector-svg {
+    position: absolute; inset: 0;
+    width: 100%; height: 100%;
+    pointer-events: none;
+  }
+  .connector-line {
+    stroke: rgba(99,179,237,0.15);
+    stroke-width: 1;
+    stroke-dasharray: 4 4;
+    fill: none;
+  }
+
+  /* Legend */
+  .legend {
+    display: flex; gap: 12px; flex-wrap: wrap;
+    font-size: 9px; font-family: 'Courier New', monospace;
+    color: rgba(226,232,240,0.4);
+  }
+  .legend-item { display: flex; align-items: center; gap: 4px; }
+  .legend-dot { width: 8px; height: 8px; border-radius: 50%; }
+</style>
+</head>
+<body>
+
+<div class="panel">
+  <div class="scan-line"></div>
+  <div class="header">
+    <div class="header-dot"></div>
+    A4 · COORDINADOR · MAPEANDO
+  </div>
+
+  <div class="stats-row">
+    <div class="stat stat-total">
+      <div class="stat-num" id="n-total">0</div>
+      <div class="stat-label">Total</div>
+    </div>
+    <div class="stat stat-done">
+      <div class="stat-num" id="n-done">0</div>
+      <div class="stat-label">Completadas</div>
+    </div>
+    <div class="stat stat-pend">
+      <div class="stat-num" id="n-pend">0</div>
+      <div class="stat-label">Pendientes</div>
+    </div>
+    <div class="stat stat-block">
+      <div class="stat-num" id="n-block">0</div>
+      <div class="stat-label">Bloqueadas</div>
+    </div>
+  </div>
+
+  <div class="nodes-area" id="nodes-area">
+    <svg class="connector-svg" id="connectors"></svg>
+  </div>
+
+  <div class="legend">
+    <div class="legend-item"><div class="legend-dot" style="background:var(--hud-success)"></div> Completada</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--hud-warning)"></div> Pendiente</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--hud-critical)"></div> Bloqueada</div>
+  </div>
+</div>
+
+<script>
+  const AREAS = [
+    { name: "Legal",       icon: "⚖",  status: "ok",      x: 30,  y: 30  },
+    { name: "TI",          icon: "💻",  status: "blocked", x: 50,  y: 75  },
+    { name: "Financiero",  icon: "💰",  status: "pending", x: 70,  y: 30  },
+    { name: "Comercial",   icon: "📋",  status: "pending", x: 20,  y: 65  },
+    { name: "RRHH",        icon: "👥",  status: "ok",      x: 80,  y: 65  },
+  ];
+
+  const nodesArea = document.getElementById('nodes-area');
+  const connSvg = document.getElementById('connectors');
+  const areaRect = { w: 360, h: 200 };
+
+  AREAS.forEach((area, i) => {
+    const group = document.createElement('div');
+    group.className = 'node-group';
+    group.style.left = (area.x / 100 * (360 - 60)) + 'px';
+    group.style.top = (area.y / 100 * (200 - 80)) + 'px';
+    group.style.animationDelay = (0.3 + i * 0.1) + 's';
+
+    const node = document.createElement('div');
+    node.className = `node node-${area.status}`;
+    node.textContent = area.icon;
+    if (area.status === 'pending') node.style.animationDelay = (0.3 + i * 0.1) + 's';
+    if (area.status === 'blocked') node.style.animationDelay = (0.3 + i * 0.1) + 's';
+
+    const label = document.createElement('div');
+    label.className = 'node-label';
+    label.textContent = area.name;
+
+    group.appendChild(node);
+    group.appendChild(label);
+    nodesArea.appendChild(group);
+  });
+
+  // Draw connector lines between nodes
+  const pairs = [[0,1],[1,2],[0,3],[2,4],[3,4]];
+  pairs.forEach(([a, b]) => {
+    const ax = (AREAS[a].x / 100 * (360 - 60)) + 26;
+    const ay = (AREAS[a].y / 100 * (200 - 80)) + 26;
+    const bx = (AREAS[b].x / 100 * (360 - 60)) + 26;
+    const by = (AREAS[b].y / 100 * (200 - 80)) + 26;
+    const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    line.setAttribute('x1', ax); line.setAttribute('y1', ay);
+    line.setAttribute('x2', bx); line.setAttribute('y2', by);
+    line.setAttribute('class', 'connector-line');
+    connSvg.appendChild(line);
+  });
+
+  // Stats count-up
+  const stats = { total: 5, done: 2, pend: 2, block: 1 };
+  setTimeout(() => {
+    document.getElementById('n-total').textContent = stats.total;
+    document.getElementById('n-done').textContent = stats.done;
+    document.getElementById('n-pend').textContent = stats.pend;
+    document.getElementById('n-block').textContent = stats.block;
+  }, 400);
+</script>
+</body>
+</html>

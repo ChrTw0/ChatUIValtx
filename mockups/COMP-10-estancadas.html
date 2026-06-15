@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>COMP-10 — Oportunidades estancadas</title>
+<style>
+  :root {
+    --brand-1: #ff6200;
+    --brand-3: #ffe0cc;
+    --brand-4: #ffefe5;
+    --white:   #fff;
+    --gray-1:  #1a1a1a;
+    --gray-3:  #555;
+    --gray-4:  #888;
+    --gray-5:  #bbb;
+    --gray-6:  #ddd;
+    --gray-7:  #eee;
+    --gray-8:  #f7f7f7;
+    --radius-sm: 6px;
+    --radius-md: 10px;
+    --shadow-1:  0 3px 4px rgba(0,0,0,.04);
+    --shadow-2:  0 4px 8px rgba(0,0,0,.08);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--gray-8);
+    display: flex; align-items: center; justify-content: center;
+    min-height: 100vh;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-size: 14px;
+    color: var(--gray-1);
+    padding: 32px;
+  }
+
+  /* Panel — burbuja bot, mismas reglas que Bubble.styles.css */
+  .panel {
+    background: var(--white);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-1);
+    padding: 14px 16px;
+    width: 340px;
+    animation: fadeInUp 0.25s cubic-bezier(.25,.46,.45,.94) both;
+  }
+  @keyframes fadeInUp {
+    from { opacity: 0; transform: translate3d(0, 16px, 0); }
+    to   { opacity: 1; transform: translate3d(0, 0, 0); }
+  }
+
+  /* Header */
+  .panel-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 12px;
+  }
+  .panel-title {
+    font-size: 13px; font-weight: 600; color: var(--gray-1);
+  }
+  .panel-badge {
+    font-size: 11px; color: var(--gray-4);
+  }
+
+  /* Heatmap grid */
+  .heatmap {
+    display: flex; flex-wrap: wrap; gap: 6px;
+    margin-bottom: 12px;
+  }
+
+  .heat-block {
+    border-radius: var(--radius-sm);
+    padding: 8px 10px;
+    cursor: pointer;
+    position: relative;
+    flex: 1; min-width: 90px;
+    border: 1px solid transparent;
+    transition: transform 0.15s cubic-bezier(.25,.46,.45,.94),
+                box-shadow 0.15s;
+    animation: block-in 0.3s cubic-bezier(.25,.46,.45,.94) both;
+  }
+  .heat-block:hover {
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-2);
+  }
+  @keyframes block-in {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .block-cliente {
+    font-size: 11px; font-weight: 600;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    margin-bottom: 3px;
+  }
+  .block-dias-row {
+    display: flex; align-items: baseline; gap: 3px;
+  }
+  .block-dias {
+    font-size: 20px; font-weight: 700; line-height: 1;
+  }
+  .block-dias-label {
+    font-size: 10px; color: var(--gray-4);
+  }
+  .block-exec {
+    font-size: 10px; color: var(--gray-4); margin-top: 3px;
+  }
+
+  /* Tooltip */
+  .tooltip {
+    position: fixed;
+    background: var(--white);
+    border: 1px solid var(--gray-6);
+    border-radius: var(--radius-sm);
+    box-shadow: var(--shadow-2);
+    padding: 8px 11px;
+    font-size: 12px; line-height: 1.5;
+    color: var(--gray-1);
+    opacity: 0; transition: opacity 0.15s;
+    pointer-events: none; z-index: 100;
+    white-space: nowrap;
+  }
+  .tooltip-label { font-weight: 600; margin-bottom: 3px; }
+  .tooltip-row   { color: var(--gray-3); }
+  .tooltip-dias  { font-weight: 600; }
+
+  /* Leyenda */
+  .legend {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 11px; color: var(--gray-4);
+  }
+  .legend-gradient {
+    flex: 1; height: 4px; border-radius: 2px;
+    background: linear-gradient(to right, #dbeafe, #fef3c7, #fee2e2);
+  }
+</style>
+</head>
+<body>
+
+<div class="panel">
+  <div class="panel-header">
+    <span class="panel-title">Oportunidades estancadas</span>
+    <span class="panel-badge">8 activas · &gt;30 días</span>
+  </div>
+
+  <div class="heatmap" id="heatmap"></div>
+
+  <div class="legend">
+    <span>reciente</span>
+    <div class="legend-gradient"></div>
+    <span>crítico</span>
+  </div>
+</div>
+
+<div class="tooltip" id="tooltip"></div>
+
+<script>
+const DATA = [
+  { cliente: "ALFA S.A.",    dias: 78, ejecutivo: "EJ-01", etapa: "EN_PROPUESTA" },
+  { cliente: "BETA CORP",    dias: 62, ejecutivo: "EJ-03", etapa: "CLASIFICADA" },
+  { cliente: "GAMMA",        dias: 45, ejecutivo: "EJ-02", etapa: "EN_PROPUESTA" },
+  { cliente: "DELTA INC.",   dias: 38, ejecutivo: "EJ-01", etapa: "RECIBIDA" },
+  { cliente: "EPSILON",      dias: 31, ejecutivo: "EJ-04", etapa: "CLASIFICADA" },
+  { cliente: "ZETA",         dias: 27, ejecutivo: "EJ-02", etapa: "EN_PROPUESTA" },
+  { cliente: "ETA",          dias: 18, ejecutivo: "EJ-03", etapa: "PROP. ENVIADA" },
+  { cliente: "THETA",        dias: 11, ejecutivo: "EJ-01", etapa: "CLASIFICADA" },
+];
+
+DATA.sort((a, b) => b.dias - a.dias);
+const maxDias = DATA[0].dias;
+
+// Color interpolation: blue-50 → amber-50 → red-100 (Tailwind palette, light tones)
+function heatColors(dias) {
+  const t = Math.min(dias / maxDias, 1);
+
+  // bg: #dbeafe (blue-200) → #fef9c3 (yellow-100) → #fee2e2 (red-100)
+  // text: #1e40af → #92400e → #991b1b
+  // border: #bfdbfe → #fde68a → #fecaca
+
+  let bg, text, border;
+
+  if (t < 0.5) {
+    const s = t * 2;
+    bg     = lerpColor('#dbeafe', '#fef9c3', s);
+    text   = lerpColor('#1e40af', '#92400e', s);
+    border = lerpColor('#bfdbfe', '#fde68a', s);
+  } else {
+    const s = (t - 0.5) * 2;
+    bg     = lerpColor('#fef9c3', '#fee2e2', s);
+    text   = lerpColor('#92400e', '#991b1b', s);
+    border = lerpColor('#fde68a', '#fecaca', s);
+  }
+  return { bg, text, border };
+}
+
+function lerpColor(a, b, t) {
+  const ah = parseInt(a.slice(1), 16);
+  const bh = parseInt(b.slice(1), 16);
+  const ar = (ah >> 16) & 0xff, ag = (ah >> 8) & 0xff, ab = ah & 0xff;
+  const br = (bh >> 16) & 0xff, bg = (bh >> 8) & 0xff, bb = bh & 0xff;
+  const r = Math.round(ar + (br - ar) * t);
+  const g = Math.round(ag + (bg - ag) * t);
+  const b2 = Math.round(ab + (bb - ab) * t);
+  return `#${r.toString(16).padStart(2,'0')}${g.toString(16).padStart(2,'0')}${b2.toString(16).padStart(2,'0')}`;
+}
+
+const container = document.getElementById('heatmap');
+const tooltip   = document.getElementById('tooltip');
+
+DATA.forEach((d, i) => {
+  const { bg, text, border } = heatColors(d.dias);
+
+  const block = document.createElement('div');
+  block.className = 'heat-block';
+  block.style.background   = bg;
+  block.style.borderColor  = border;
+  block.style.animationDelay = (i * 0.05) + 's';
+
+  block.innerHTML = `
+    <div class="block-cliente" style="color:${text}">${d.cliente}</div>
+    <div class="block-dias-row">
+      <span class="block-dias" style="color:${text}">${d.dias}</span>
+      <span class="block-dias-label">días</span>
+    </div>
+    <div class="block-exec">${d.ejecutivo}</div>
+  `;
+
+  block.addEventListener('mousemove', e => {
+    tooltip.style.opacity = '1';
+    tooltip.innerHTML = `
+      <div class="tooltip-label">${d.cliente}</div>
+      <div class="tooltip-row">Sin actividad: <span class="tooltip-dias" style="color:${text}">${d.dias} días</span></div>
+      <div class="tooltip-row">Etapa: ${d.etapa}</div>
+      <div class="tooltip-row">Ejecutivo: ${d.ejecutivo}</div>
+    `;
+    tooltip.style.left = (e.clientX + 12) + 'px';
+    tooltip.style.top  = (e.clientY - 8) + 'px';
+  });
+  block.addEventListener('mouseleave', () => { tooltip.style.opacity = '0'; });
+
+  container.appendChild(block);
+});
+</script>
+</body>
+</html>

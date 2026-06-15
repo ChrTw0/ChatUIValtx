@@ -3,11 +3,21 @@ export const EJECUTIVO_ID    = 'ejecutivo_demo';
 
 export const AGENT_LABELS: Record<string, string> = {
   agent0_orquestador:          'Orquestador',
-  agent1_clasificador:         'Clasificador',
-  agent2_constructor_pte:      'Constructor PTE',
-  agent3_analista_financiero:  'Analista Financiero',
-  agent4_tramitador_seace:     'Tramitador SEACE',
-  agent5_intel_mercado:        'Intel Mercado',
-  agent6_registro:             'Registro',
-  agent7_gestor_oportunidades: 'Gestor Oportunidades',
+  agent1_clasificador:         'A1 · Clasificador',
+  agent2_constructor_pte:      'A2 · Constructor',
+  agent3_analista_financiero:  'A3 · Costos',
+  agent4_tramitador_seace:     'A4 · Coordinador',
+  agent5_intel_mercado:        'A5 · Inteligencia',
+  agent6_registro:             'A6 · Registro',
+  agent7_gestor_oportunidades: 'A7 · Análisis',
+};
+
+export const AGENT_PILL_LABELS: Record<string, string> = {
+  agent1_clasificador:         'Analizando documento...',
+  agent2_constructor_pte:      'Generando propuesta...',
+  agent3_analista_financiero:  'Revisando cotización...',
+  agent4_tramitador_seace:     'Mapeando dependencias...',
+  agent5_intel_mercado:        'Investigando mercado...',
+  agent6_registro:             'Registrando...',
+  agent7_gestor_oportunidades: 'Buscando oportunidad...',
 };
