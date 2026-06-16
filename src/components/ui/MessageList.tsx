@@ -32,6 +32,7 @@ export function MessageList({ messages, thinkingFase, onVerBorrador, onHitlSelec
             text={msg.content?.text ?? ''}
             agente={msg.content?.agente ?? null}
             draft={msg.content?.draft as DraftData | undefined}
+            fontFamily={msg.content?.fontFamily as string | undefined}
             traceAgente={msg.content?.agente as string | undefined}
             traceDone={msg.content?.done as boolean | undefined}
             hitlOpciones={msg.content?.opciones as string[] | undefined}

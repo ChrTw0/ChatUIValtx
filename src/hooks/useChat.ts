@@ -11,7 +11,20 @@ import type { ThinkingFase } from '../types/ui';
 import type { QuickReplyItemProps } from '@chatui/core';
 
 export function useChat(onDraft?: (draft: DraftData) => void) {
-  const { messages, appendMsg, updateMsg } = useMessages([]);
+  const _MD = `**Negrita**, *cursiva*, ~~tachado~~
+# H1 Título
+## H2 Subtítulo
+Lista: - Item A - Item B
+\`código inline\`
+| Col A | Col B |
+|---|---|
+| YURA | 🔴 Crítica |
+| EFE | 🟢 Normal |`;
+
+  const { messages, appendMsg, updateMsg } = useMessages([
+    { type: 'text', position: 'left', content: { text: `**Sora** — fuente seleccionada\n\n${_MD}`, fontFamily: '"Sora", sans-serif' } },
+  ]);
+
   const { quickReplies, replace: setQuickReplies, visible: qrVisible, setVisible: setQrVisible } = useQuickReplies([]);
 
   const [thinking, setThinking]       = useState(false);

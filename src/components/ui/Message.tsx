@@ -13,6 +13,7 @@ interface Props {
   agente?: string | null;
   typing?: boolean;
   draft?: DraftData;
+  fontFamily?: string;
   // trace
   traceAgente?: string;
   traceDone?: boolean;
@@ -24,7 +25,7 @@ interface Props {
 }
 
 export function Message({
-  position, type, text, agente, typing, draft,
+  position, type, text, agente, typing, draft, fontFamily,
   traceAgente, traceDone,
   hitlOpciones, hitlTipo,
   onVerBorrador, onHitlSelect,
@@ -50,7 +51,7 @@ export function Message({
               />
             </Bubble>
           ) : (
-            <Bubble text={text} typing={typing} />
+            <Bubble text={text} typing={typing} fontFamily={fontFamily} />
           )}
         </div>
       </div>

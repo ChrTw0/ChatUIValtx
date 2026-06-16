@@ -1,5 +1,7 @@
 /* Variables globales, reset y animaciones — sin clases de componente */
 
+@import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&display=swap');
+
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
@@ -54,7 +56,7 @@
 }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-family: 'Sora', sans-serif;
   font-size: 14px;
   color: var(--color-text-1);
   background: var(--app-bg);
