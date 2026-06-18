@@ -1,10 +1,11 @@
 import { useState } from 'react';
+import { HitlContexto } from './HitlContexto';
 import './HitlCard.styles.css';
-
 
 interface Props {
   opciones: string[];
   hitl_tipo: string;
+  contexto?: Record<string, unknown>;
   onSelect: (valor: string) => void;
 }
 
@@ -15,7 +16,7 @@ function resolverModo(hitl_tipo: string, opciones: string[]): 'botones' | 'boton
   return 'botones';
 }
 
-export function HitlCard({ opciones, hitl_tipo, onSelect }: Props) {
+export function HitlCard({ opciones, hitl_tipo, contexto, onSelect }: Props) {
   const modo = resolverModo(hitl_tipo, opciones);
   const [seleccionado, setSeleccionado] = useState<number | null>(null);
   const [inputValor, setInputValor] = useState('');
@@ -48,6 +49,7 @@ export function HitlCard({ opciones, hitl_tipo, onSelect }: Props) {
 
   return (
     <div className="HitlCard">
+      {contexto && <HitlContexto contexto={contexto} hitl_tipo={hitl_tipo} />}
       {opciones.length > 0 && (
         <div className="HitlCard-capsules">
           {opciones.map((opcion, i) => (
@@ -74,7 +76,7 @@ export function HitlCard({ opciones, hitl_tipo, onSelect }: Props) {
             className="HitlCard-input"
             type="text"
             placeholder={
-              esperandoInput        ? 'Ingresa el valor corregido...'
+              esperandoInput           ? 'Ingresa el valor corregido...'
               : modo === 'botones_o_input' ? 'O escribe una búsqueda diferente...'
               : 'Escribe tu respuesta...'
             }

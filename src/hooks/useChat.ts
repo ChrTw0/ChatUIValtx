@@ -1,6 +1,7 @@
-import { useRef, useState } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { useMessages, useQuickReplies } from '@chatui/core';
 import { sendMessage } from '../api/chat';
+import { fetchDraft } from '../api/drafts';
 import { uploadFile } from '../api/files';
 import { useStream } from './useStream';
 import { useHitl } from './useHitl';
@@ -11,19 +12,7 @@ import type { ThinkingFase } from '../types/ui';
 import type { QuickReplyItemProps } from '@chatui/core';
 
 export function useChat(onDraft?: (draft: DraftData) => void) {
-  const _MD = `**Negrita**, *cursiva*, ~~tachado~~
-# H1 Título
-## H2 Subtítulo
-Lista: - Item A - Item B
-\`código inline\`
-| Col A | Col B |
-|---|---|
-| YURA | 🔴 Crítica |
-| EFE | 🟢 Normal |`;
-
-  const { messages, appendMsg, updateMsg } = useMessages([
-    { type: 'text', position: 'left', content: { text: `**Sora** — fuente seleccionada\n\n${_MD}`, fontFamily: '"Sora", sans-serif' } },
-  ]);
+  const { messages, appendMsg, updateMsg } = useMessages([]);
 
   const { quickReplies, replace: setQuickReplies, visible: qrVisible, setVisible: setQrVisible } = useQuickReplies([]);
 
@@ -62,11 +51,10 @@ Lista: - Item A - Item B
 
     try {
       await sendMessage({
-        texto: t,
+        texto: hitlDecision || t,
         ejecutivo_id: EJECUTIVO_ID,
         session_id: sessionId.current,
         file_ids: pendingFiles.length ? [...pendingFiles] : undefined,
-        respuesta_hitl: hitlDecision ? { decision: hitlDecision } : undefined,
       });
       setPending([]);
     } catch {
@@ -76,6 +64,7 @@ Lista: - Item A - Item B
     }
 
     let agente: string | null = null;
+    let streamingText = '';
 
     connect(sessionId.current, (e: SSEEvent) => {
       if (e.tipo === 'pensando') {
@@ -101,6 +90,12 @@ Lista: - Item A - Item B
         });
       }
 
+      if (e.tipo === 'token' && e.token) {
+        streamingText += e.token;
+        updateMsg(botId, { type: 'text', content: { text: streamingText, agente, streaming: true }, position: 'left' });
+        setThinkingFase({ tipo: 'idle' });
+      }
+
       if (e.tipo === 'respuesta' && e.mensaje) {
         if (prevTraceId) {
           updateMsg(prevTraceId, {
@@ -108,9 +103,15 @@ Lista: - Item A - Item B
             content: { agente: agente ?? '', done: true },
             position: 'left',
           });
+          prevTraceId = undefined;
         }
-        updateMsg(botId, { type: 'text', content: { text: e.mensaje, agente }, position: 'left' });
-        botMsgSet = true;
+        if (!botMsgSet) {
+          updateMsg(botId, { type: 'text', content: { text: e.mensaje, agente, streaming: false }, position: 'left' });
+          botMsgSet = true;
+        } else {
+          // Bubble independiente para respuestas posteriores (ej: resumen A4/A2 post-clasificación)
+          appendMsg({ type: 'text', content: { text: e.mensaje, agente }, position: 'left' });
+        }
         stopThinking();
       }
 
@@ -119,14 +120,29 @@ Lista: - Item A - Item B
         stopThinking();
       }
 
+      if (e.tipo === 'narrativa' && e.mensaje) {
+        // Si ya hay bubbles previos (on_respuesta intermedios), narrativa va como bubble nuevo
+        if (!botMsgSet) {
+          updateMsg(botId, { type: 'text', content: { text: e.mensaje, agente }, position: 'left' });
+          botMsgSet = true;
+        } else {
+          appendMsg({ type: 'text', content: { text: e.mensaje, agente }, position: 'left' });
+        }
+      }
+
       if (e.tipo === 'hitl' && e.datos) {
         const d = e.datos as HitlData;
 
         if (d.hitl_tipo === 'draft_listo' && onDraft) {
-          const draft = d.contexto as unknown as DraftData;
-          onDraft(draft);
-          updateMsg(botId, { type: 'draft', content: { draft }, position: 'left' });
+          const ctx = d.contexto as Record<string, unknown>;
+          const oportunidadId = ctx?.oportunidad_id as string | undefined;
           stopThinking();
+          if (oportunidadId) {
+            fetchDraft(oportunidadId).then(draft => {
+              onDraft(draft);
+              appendMsg({ type: 'draft', content: { draft }, position: 'left' });
+            }).catch(() => {});
+          }
           return;
         }
 
@@ -138,13 +154,13 @@ Lista: - Item A - Item B
           });
         }
 
-        // HITL inline: el botId se convierte en burbuja con cápsulas embebidas
+        // HITL inline: si botId aún vacío lo convierte, si ya hay bubbles previos crea uno nuevo
+        const hitlContent = { text: e.mensaje ?? d.hitl_tipo, opciones: d.opciones, hitl_tipo: d.hitl_tipo, contexto: d.contexto };
         if (!botMsgSet) {
-          updateMsg(botId, {
-            type: 'hitl',
-            content: { text: e.mensaje ?? d.hitl_tipo, opciones: d.opciones, hitl_tipo: d.hitl_tipo },
-            position: 'left',
-          });
+          updateMsg(botId, { type: 'hitl', content: hitlContent, position: 'left' });
+          botMsgSet = true;
+        } else {
+          appendMsg({ type: 'hitl', content: hitlContent, position: 'left' });
         }
         stopThinking();
 

@@ -4,13 +4,14 @@ import { IconClose, IconSpinner } from './icons';
 import type { DraftData } from '../../types/api';
 
 const SECCIONES: { key: string; label: string }[] = [
-  { key: 'resumen_ejecutivo',      label: 'Resumen Ejecutivo' },
-  { key: 'alcance',                label: 'Alcance' },
-  { key: 'metodologia',            label: 'Metodología' },
-  { key: 'equipo',                 label: 'Equipo' },
-  { key: 'cronograma',             label: 'Cronograma' },
-  { key: 'presupuesto',            label: 'Presupuesto' },
+  { key: 'alcance_tecnico',        label: 'Alcance Técnico' },
+  { key: 'entregables',            label: 'Entregables' },
+  { key: 'equipo_propuesto',       label: 'Equipo Propuesto' },
+  { key: 'plazo_ejecucion',        label: 'Plazo de Ejecución' },
+  { key: 'precio_total',           label: 'Precio Total' },
+  { key: 'desglose_costos',        label: 'Desglose de Costos' },
   { key: 'condiciones_comerciales',label: 'Condiciones Comerciales' },
+  { key: 'garantias_sla',          label: 'Garantías y SLA' },
 ];
 
 interface Props {

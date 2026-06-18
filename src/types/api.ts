@@ -16,9 +16,10 @@ export interface HitlData {
 }
 
 export interface SSEEvent {
-  tipo: 'pensando' | 'agente_llamado' | 'respuesta' | 'hitl' | 'error' | 'fin';
+  tipo: 'pensando' | 'agente_llamado' | 'respuesta' | 'narrativa' | 'hitl' | 'error' | 'fin' | 'token';
   agente?: string | null;
   mensaje?: string | null;
+  token?: string | null;
   datos?: HitlData | DraftData | Record<string, unknown> | null;
 }
 
@@ -30,6 +31,6 @@ export interface DraftData {
   estado: 'borrador' | 'revisado' | 'aprobado' | 'enviado';
   contenido: Record<string, unknown>;
   campos_incompletos: string[];
-  moneda: string;
+  moneda?: string;
   margen_estimado?: number;
 }

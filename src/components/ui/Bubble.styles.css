@@ -13,6 +13,7 @@
   overflow-wrap: break-word;
   line-height: 1.55;
   font-size: 14px;
+  font-family: 'Sora', sans-serif;
 }
 
 .Bubble--text p {
@@ -49,8 +50,8 @@
   color: var(--color-text-2);
 }
 .Bubble--text code {
-  background: var(--gray-2);
-  color: var(--color-primary);
+  background: var(--brand-4);
+  color: var(--brand-1);
   border-radius: 3px;
   padding: 1px 4px;
   font-size: 12px;
@@ -89,6 +90,21 @@
 }
 .Bubble--text tr:hover td {
   background: var(--brand-4);
+}
+
+.Bubble--streaming button { display: none !important; }
+
+.Bubble--streaming p:last-child::after {
+  content: '▋';
+  display: inline-block;
+  color: var(--brand-1);
+  animation: cursorBlink 0.8s step-end infinite;
+  margin-left: 1px;
+}
+
+@keyframes cursorBlink {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0; }
 }
 
 .Bubble--typing {

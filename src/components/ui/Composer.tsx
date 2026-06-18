@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import './Composer.styles.css';
 import { IconAttach, IconSend } from './icons';
 
@@ -10,6 +10,19 @@ interface Props {
 
 export function Composer({ onSend, onAttach, disabled }: Props) {
   const [input, setInput] = useState('');
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  function resize() {
+    const el = textareaRef.current;
+    if (!el) return;
+    el.style.height = 'auto';
+    el.style.height = `${el.scrollHeight}px`;
+  }
+
+  function handleChange(e: React.ChangeEvent<HTMLTextAreaElement>) {
+    setInput(e.target.value);
+    resize();
+  }
 
   function handleKeyDown(e: React.KeyboardEvent) {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -22,6 +35,8 @@ export function Composer({ onSend, onAttach, disabled }: Props) {
     if (!input.trim()) return;
     onSend(input);
     setInput('');
+    // reset altura tras enviar
+    if (textareaRef.current) textareaRef.current.style.height = 'auto';
   }
 
   function handleAttachClick() {
@@ -43,9 +58,10 @@ export function Composer({ onSend, onAttach, disabled }: Props) {
         </button>
         <div className="Composer-inputWrap">
           <textarea
+            ref={textareaRef}
             className="Composer-input"
             value={input}
-            onChange={e => setInput(e.target.value)}
+            onChange={handleChange}
             onKeyDown={handleKeyDown}
             placeholder="Escribe tu mensaje..."
             rows={1}

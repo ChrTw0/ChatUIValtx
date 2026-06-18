@@ -1,15 +1,7 @@
 import { apiFetch } from './client';
+import type { DraftData } from '../types/api';
 
-export interface DraftResponse {
-  oportunidad_id: string;
-  version: string | number;
-  estado: string;
-  completitud_pct: number;
-  campos_incompletos: string[];
-  margen_proyectado: number | null;
-  contenido: Record<string, string>;
-}
-
-export async function getDraft(oportunidadId: string): Promise<DraftResponse> {
-  return apiFetch(`/drafts/${oportunidadId}`);
+export async function fetchDraft(oportunidadId: string): Promise<DraftData> {
+  const res = await apiFetch(`/drafts/${oportunidadId}`);
+  return res.json() as Promise<DraftData>;
 }

@@ -6,6 +6,7 @@ import { MessageList } from '../ui/MessageList';
 import { Composer } from '../ui/Composer';
 import { DraftPanel } from '../ui/DraftPanel';
 import { sendMessage } from '../../api/chat';
+import { fetchDraft } from '../../api/drafts';
 import { getOrCreateSessionId } from '../../utils/session';
 import { EJECUTIVO_ID } from '../../constants';
 import type { DraftData } from '../../types/api';
@@ -45,7 +46,10 @@ export function ChatApp() {
           <MessageList
             messages={messages}
             thinkingFase={thinkingFase}
-            onVerBorrador={(draft) => panel.abrir(draft)}
+            onVerBorrador={async (draft) => {
+            const full = await fetchDraft(draft.oportunidad_id);
+            panel.abrir({ ...full, cliente: draft.cliente });
+          }}
             onHitlSelect={(valor) => enviar('', valor)}
           />
 
