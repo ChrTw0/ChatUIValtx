@@ -1,0 +1,710 @@
+/* ─── Root ─────────────────────────────────────────────────────────────────── */
+
+.DM-root {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 24px 16px 48px;
+  min-height: 100vh;
+  background: var(--app-bg);
+  overflow-y: auto;
+}
+
+/* ─── Shell ────────────────────────────────────────────────────────────────── */
+
+.DM-shell {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 720px;
+  height: 580px;
+  background: var(--color-fill-1);
+  border-radius: 12px;
+  border: 1px solid var(--color-line-2);
+  box-shadow: 0 4px 24px rgba(0,0,0,.08);
+  overflow: hidden;
+}
+
+/* ─── Navbar ───────────────────────────────────────────────────────────────── */
+
+.DM-navbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  height: 44px;
+  background: var(--navbar-bg);
+  border-bottom: 1px solid var(--color-line-2);
+  flex-shrink: 0;
+}
+.DM-navbar-title {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-text-1);
+}
+.DM-hudTrigger {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 11px;
+  border-radius: 5px;
+  border: 1px solid var(--color-line-2);
+  background: var(--color-fill-2);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-text-2);
+  cursor: pointer;
+  transition: border-color .12s, color .12s;
+}
+.DM-hudTrigger:hover {
+  border-color: var(--brand-1);
+  color: var(--brand-1);
+}
+.DM-kbd {
+  font-size: 10px;
+  color: var(--color-text-3);
+  background: var(--color-fill-1);
+  border: 1px solid var(--color-line-2);
+  border-radius: 3px;
+  padding: 1px 4px;
+  font-family: monospace;
+}
+
+/* ─── Feed / Composer ──────────────────────────────────────────────────────── */
+
+.DM-feed {
+  flex: 1;
+  overflow-y: auto;
+  padding: 14px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.DM-msgRow { display: flex; align-items: flex-end; gap: 7px; }
+.DM-msgRow--user { justify-content: flex-end; }
+.DM-avatar {
+  width: 26px; height: 26px; border-radius: 50%;
+  background: var(--brand-1); color: #fff;
+  font-size: 11px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.DM-bubble {
+  max-width: 400px;
+  background: var(--color-fill-1);
+  border: 1px solid var(--color-line-2);
+  border-radius: 8px;
+  padding: 9px 12px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--color-text-1);
+}
+.DM-bubble--user {
+  background: var(--brand-1); color: #fff; border-color: transparent;
+}
+.DM-composer {
+  display: flex; align-items: center; gap: 8px;
+  padding: 10px 12px;
+  border-top: 1px solid var(--color-line-2);
+  background: var(--footer-bg);
+  flex-shrink: 0;
+}
+.DM-composer-input {
+  flex: 1; padding: 8px 12px; border-radius: 6px;
+  background: var(--color-fill-2); color: var(--color-text-3);
+  font-size: 13px;
+  border: 1px solid var(--color-line-2);
+}
+.DM-composer-send {
+  width: 32px; height: 32px; border-radius: 6px;
+  background: var(--brand-1); color: #fff;
+  border: none; font-size: 15px; font-weight: 700;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+}
+
+/* ─── Overlay ──────────────────────────────────────────────────────────────── */
+
+.DM-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(10, 12, 20, .45);
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  animation: dmFadeIn .12s ease;
+}
+@keyframes dmFadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+/* ─── HUD ──────────────────────────────────────────────────────────────────── */
+
+.DM-hud {
+  width: 560px;
+  max-width: 94%;
+  max-height: 480px;
+  display: flex;
+  flex-direction: column;
+  background: var(--color-fill-1);
+  border: 1px solid var(--color-line-2);
+  border-radius: 8px;
+  box-shadow: 0 16px 48px rgba(0,0,0,.18);
+  overflow: hidden;
+  animation: dmHudIn .2s cubic-bezier(.34,1.15,.64,1);
+}
+@keyframes dmHudIn {
+  from { opacity: 0; transform: scale(.95) translateY(-8px); }
+  to   { opacity: 1; transform: scale(1)   translateY(0); }
+}
+
+.DM-hud-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px 11px;
+  border-bottom: 1px solid var(--color-line-2);
+  flex-shrink: 0;
+}
+.DM-hud-titleArea {
+  display: flex; align-items: center; gap: 8px;
+}
+.DM-hud-statusdot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: #16a34a;
+  flex-shrink: 0;
+}
+.DM-hud-title {
+  font-size: 13px; font-weight: 600; color: var(--color-text-1);
+}
+.DM-hud-close {
+  background: none; border: none; font-size: 12px;
+  color: var(--color-text-3); cursor: pointer;
+  padding: 4px 6px; border-radius: 4px; line-height: 1;
+  transition: background .1s, color .1s;
+}
+.DM-hud-close:hover {
+  background: var(--color-fill-2);
+  color: var(--color-text-1);
+}
+
+/* ─── Tab bar ──────────────────────────────────────────────────────────────── */
+
+.DM-hud-tabbar {
+  display: flex;
+  border-bottom: 1px solid var(--color-line-2);
+  padding: 0 4px;
+  gap: 0;
+  flex-shrink: 0;
+}
+
+.DM-tabBtn {
+  position: relative;
+  padding: 10px 14px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-text-3);
+  transition: color .12s;
+  white-space: nowrap;
+}
+.DM-tabBtn:hover { color: var(--color-text-2); }
+.DM-tabBtn--active { color: var(--color-text-1); font-weight: 600; }
+
+.DM-tabBtn-underline {
+  position: absolute;
+  bottom: -1px;
+  left: 10px; right: 10px;
+  height: 2px;
+  border-radius: 2px 2px 0 0;
+  background: var(--brand-1);
+  animation: dmUnderline .15s ease;
+}
+@keyframes dmUnderline {
+  from { transform: scaleX(0); opacity: 0; }
+  to   { transform: scaleX(1); opacity: 1; }
+}
+
+/* ─── HUD Body ─────────────────────────────────────────────────────────────── */
+
+.DM-hud-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 14px 16px;
+  animation: dmBodyIn .15s ease;
+}
+@keyframes dmBodyIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ─── Chip ─────────────────────────────────────────────────────────────────── */
+
+.DM-chip {
+  font-size: 9px;
+  font-weight: 700;
+  padding: 2px 5px;
+  border-radius: 3px;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+}
+.DM-chip--cliente  { background: #e3fcef; color: #1a7f4b; border: 1px solid #a8e6c7; }
+.DM-chip--proveedor { background: #fef9c3; color: #7c5800; border: 1px solid #fde68a; }
+
+/* ─── Módulo 1: KPI ────────────────────────────────────────────────────────── */
+
+.DM-kpi-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.DM-kpi-card {
+  background: var(--color-fill-2);
+  border: 1px solid var(--color-line-2);
+  border-radius: 6px;
+  border-left: 3px solid transparent;
+  padding: 14px;
+  overflow: hidden;
+}
+.DM-kpi-card--alert { border-left-color: #dc2626; }
+.DM-kpi-card--warn  { border-left-color: #d97706; }
+
+.DM-kpi-top {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.DM-kpi-val {
+  font-size: 28px;
+  font-weight: 600;
+  letter-spacing: -.03em;
+  color: var(--color-text-1);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.DM-kpi-label {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--color-text-2);
+  margin-bottom: 4px;
+}
+.DM-kpi-delta {
+  font-size: 10px;
+  font-weight: 500;
+}
+.DM-kpi-delta--ok   { color: #16a34a; }
+.DM-kpi-delta--bad  { color: #dc2626; }
+.DM-kpi-delta--warn { color: #d97706; }
+
+/* ─── Módulo 2: Contratos — recta temporal ────────────────────────────────── */
+
+.DM-tl2-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.DM-tl2-scroll {
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+.DM-tl2-scroll::-webkit-scrollbar       { height: 4px; }
+.DM-tl2-scroll::-webkit-scrollbar-track { background: var(--color-fill-2); border-radius: 2px; }
+.DM-tl2-scroll::-webkit-scrollbar-thumb { background: var(--color-line-2); border-radius: 2px; }
+.DM-tl2-scroll::-webkit-scrollbar-thumb:hover { background: var(--color-text-3); }
+
+/* ─── Gantt (clases compartidas con detalle) ───────────────────────────────── */
+
+.DM-gantt-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+/* scroll horizontal con scrollbar fina personalizada */
+.DM-gantt-scroll {
+  overflow-x: auto;
+  overflow-y: visible;
+  padding-bottom: 2px;
+}
+.DM-gantt-scroll::-webkit-scrollbar       { height: 4px; }
+.DM-gantt-scroll::-webkit-scrollbar-track { background: var(--color-fill-2); border-radius: 2px; }
+.DM-gantt-scroll::-webkit-scrollbar-thumb { background: var(--color-line-2); border-radius: 2px; }
+.DM-gantt-scroll::-webkit-scrollbar-thumb:hover { background: var(--color-text-3); }
+
+/* header de meses */
+.DM-gantt-months-row {
+  display: flex;
+  align-items: flex-end;
+  padding-bottom: 3px;
+}
+.DM-gantt-month {
+  position: absolute;
+  font-size: 9px;
+  font-weight: 600;
+  color: var(--color-text-3);
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  transform: translateX(-50%);
+  user-select: none;
+}
+
+/* filas */
+.DM-gantt-row {
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid var(--color-fill-2);
+}
+.DM-gantt-row:last-child { border-bottom: none; }
+
+/* label sticky izquierdo */
+.DM-gantt-row-label {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  background: var(--color-fill-1);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding-right: 10px;
+  flex-shrink: 0;
+  border-right: 1px solid var(--color-fill-2);
+  height: 100%;
+}
+.DM-gantt-label-text {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--color-text-2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 88px;
+}
+.DM-gantt-conf-dot {
+  width: 5px; height: 5px; border-radius: 50%;
+  background: #f59e0b;
+  flex-shrink: 0;
+}
+
+/* guía horizontal de la fila */
+.DM-gantt-guide {
+  position: absolute;
+  top: 50%; left: 0; right: 0;
+  height: 1px;
+  background: var(--color-fill-2);
+  pointer-events: none;
+}
+
+/* línea de hoy */
+.DM-gantt-today {
+  position: absolute;
+  top: 0; bottom: 0;
+  width: 1px;
+  background: var(--brand-1);
+  opacity: .6;
+  pointer-events: none;
+  z-index: 1;
+}
+.DM-gantt-today-label {
+  position: absolute;
+  font-size: 8px;
+  font-weight: 700;
+  color: var(--brand-1);
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  transform: translateX(-50%);
+  user-select: none;
+}
+
+/* barras de contrato */
+.DM-gantt-bar {
+  position: absolute;
+  height: 18px;
+  border-radius: 3px;
+  border: 1px solid;
+  display: flex;
+  align-items: center;
+  padding: 0 5px;
+  transition: background .12s, color .12s;
+  z-index: 1;
+}
+.DM-gantt-bar:hover {
+  filter: brightness(.92);
+}
+.DM-gantt-bar--sel {
+  z-index: 2;
+  box-shadow: 0 2px 8px rgba(0,0,0,.14);
+}
+.DM-gantt-bar--vencido {
+  opacity: .55;
+}
+.DM-gantt-bar--futuro {
+  border-style: dashed;
+}
+.DM-gantt-bar-txt {
+  font-size: 9px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  user-select: none;
+}
+
+/* zona de conflicto — rayas diagonales */
+.DM-gantt-conflict-zone {
+  position: absolute;
+  height: 18px;
+  border-radius: 2px;
+  pointer-events: none;
+  z-index: 3;
+  background: repeating-linear-gradient(
+    -45deg,
+    transparent,
+    transparent 3px,
+    rgba(245,158,11,.35) 3px,
+    rgba(245,158,11,.35) 4px
+  );
+}
+
+/* panel de detalle */
+.DM-gantt-detail {
+  margin-top: 8px;
+  padding: 10px 12px;
+  border-radius: 5px;
+  border: 1px solid var(--color-line-2);
+  background: var(--color-fill-2);
+  animation: dmDetailIn .15s ease;
+}
+@keyframes dmDetailIn {
+  from { opacity: 0; transform: translateY(-3px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.DM-gantt-detail-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 7px;
+}
+.DM-gantt-detail-nombre {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text-1);
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.DM-gantt-detail-close {
+  background: none; border: none; font-size: 11px;
+  color: var(--color-text-3); cursor: pointer;
+  padding: 2px 5px; border-radius: 3px;
+  transition: background .1s;
+  flex-shrink: 0;
+}
+.DM-gantt-detail-close:hover { background: var(--color-line-2); }
+
+.DM-gantt-detail-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.DM-gantt-detail-item {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+}
+.DM-gantt-detail-key {
+  font-size: 9px;
+  color: var(--color-text-3);
+  text-transform: uppercase;
+  letter-spacing: .05em;
+}
+.DM-gantt-detail-val {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text-1);
+  font-variant-numeric: tabular-nums;
+}
+.DM-gantt-detail-sep {
+  color: var(--color-line-2);
+  font-size: 11px;
+}
+
+/* ─── Módulo 3: Compromisos — agrupado por responsable ────────────────────── */
+
+.DM-comp-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.DM-comp-summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-bottom: 10px;
+  margin-bottom: 2px;
+  border-bottom: 1px solid var(--color-fill-2);
+}
+.DM-comp-summary-total {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--color-text-2);
+}
+.DM-comp-summary-vencidos {
+  font-size: 10px;
+  font-weight: 700;
+  color: #dc2626;
+  background: #fee2e2;
+  border: 1px solid #fecaca;
+  border-radius: 3px;
+  padding: 1px 6px;
+}
+
+/* fila de un responsable */
+.DM-comp-row {
+  display: flex;
+  gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--color-fill-2);
+  align-items: flex-start;
+}
+.DM-comp-row:last-child { border-bottom: none; }
+
+.DM-comp-avatar {
+  width: 28px; height: 28px;
+  border-radius: 5px;
+  background: var(--color-fill-2);
+  border: 1px solid var(--color-line-2);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px; font-weight: 700;
+  color: var(--color-text-2);
+  flex-shrink: 0;
+  margin-top: 1px;
+  font-variant-numeric: tabular-nums;
+}
+
+.DM-comp-items {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+}
+
+.DM-comp-item {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+  padding: 5px 8px;
+  border-radius: 4px;
+  background: var(--color-fill-2);
+  border-left: 2px solid transparent;
+}
+.DM-comp-item--vencido {
+  border-left-color: #dc2626;
+}
+
+.DM-comp-cliente {
+  font-size: 9px; font-weight: 700;
+  letter-spacing: .05em; text-transform: uppercase;
+  color: var(--color-text-3);
+  flex-shrink: 0;
+  width: 68px;
+}
+.DM-comp-item--vencido .DM-comp-cliente { color: #dc2626; }
+
+.DM-comp-desc {
+  font-size: 11px; font-weight: 400;
+  color: var(--color-text-1);
+  flex: 1; min-width: 0;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+
+.DM-comp-fecha {
+  font-size: 10px; font-weight: 500;
+  color: var(--color-text-3);
+  flex-shrink: 0;
+  font-variant-numeric: tabular-nums;
+}
+.DM-comp-fecha--vencido { color: #dc2626; font-weight: 700; }
+
+/* ─── Módulo 4: Actividad — timeline proporcional ──────────────────────────── */
+
+.DM-act-timeline {
+  display: flex;
+  flex-direction: column;
+}
+
+.DM-act-item {
+  display: flex;
+  gap: 11px;
+}
+
+.DM-act-left {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex-shrink: 0;
+  width: 30px;
+}
+
+.DM-act-type {
+  width: 30px; height: 30px;
+  border-radius: 5px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+
+/* conector de altura variable — refleja tiempo transcurrido */
+.DM-act-connector {
+  width: 1px;
+  background: var(--color-line-2);
+  margin: 3px 0;
+  flex-shrink: 0;
+}
+
+.DM-act-content {
+  flex: 1;
+  padding-bottom: 4px;
+  min-width: 0;
+}
+.DM-act-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 5px;
+  padding-top: 7px;
+}
+.DM-act-titulo {
+  font-size: 12px; font-weight: 500; color: var(--color-text-1);
+  line-height: 1.3;
+}
+.DM-act-hace {
+  font-size: 10px; color: var(--color-text-3);
+  white-space: nowrap; flex-shrink: 0;
+  font-variant-numeric: tabular-nums;
+}
+.DM-act-meta {
+  display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+  padding-bottom: 2px;
+}
+.DM-act-etapa {
+  font-size: 9px; font-weight: 600;
+  padding: 2px 6px; border-radius: 3px;
+  letter-spacing: .04em; text-transform: uppercase;
+}
+.DM-act-cliente {
+  font-size: 11px; color: var(--color-text-2); font-weight: 500;
+}
+.DM-act-actor {
+  font-size: 11px; color: var(--color-text-3);
+}
