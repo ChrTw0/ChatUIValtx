@@ -5,35 +5,27 @@ import { Navbar } from '../ui/Navbar';
 import { MessageList } from '../ui/MessageList';
 import { Composer } from '../ui/Composer';
 import { DraftPanel } from '../ui/DraftPanel';
-import { sendMessage } from '../../api/chat';
 import { fetchDraft } from '../../api/drafts';
-import { getOrCreateSessionId } from '../../utils/session';
-import { EJECUTIVO_ID } from '../../constants';
 import type { DraftData } from '../../types/api';
 
 export function ChatApp() {
   const panel = useDraftPanel();
-  const { messages, thinking, thinkingFase, enviar, adjuntar } = useChat(
+  const { messages, thinking, thinkingFase, enviar, adjuntar, pendingFiles, quitarArchivo } = useChat(
     (draft: DraftData) => panel.abrir(draft)
   );
 
   async function handleGuardarEjecutar(contenido: Record<string, unknown>) {
     if (!panel.draft) return;
-    panel.setLoading(true);
-    try {
-      await sendMessage({
-        texto: '',
-        ejecutivo_id: EJECUTIVO_ID,
-        session_id: getOrCreateSessionId(),
-        respuesta_hitl: {
-          decision: 'guardar_draft',
-          valor: { oportunidad_id: panel.draft.oportunidad_id, contenido },
-        },
-      });
-    } finally {
-      panel.setLoading(false);
-      panel.cerrar();
-    }
+
+    const camposTexto = Object.entries(contenido)
+      .filter(([, v]) => v !== '' && v !== null && v !== undefined)
+      .map(([k, v]) => `- ${k}: ${v}`)
+      .join('\n');
+
+    const texto = `Guarda el draft de la propuesta para ${panel.draft.cliente} (oportunidad_id: ${panel.draft.oportunidad_id}).\nCampos completados:\n${camposTexto}`;
+
+    panel.cerrar();
+    enviar(texto);
   }
 
   return (
@@ -56,6 +48,8 @@ export function ChatApp() {
           <Composer
             onSend={(text) => enviar(text)}
             onAttach={adjuntar}
+            onRemoveFile={quitarArchivo}
+            pendingFiles={pendingFiles}
             disabled={thinking}
           />
         </div>

@@ -1,5 +1,6 @@
 export const SESSION_ID_KEY = 'valtx_session_id';
-export const EJECUTIVO_ID    = 'ejecutivo_demo';
+// TODO: reemplazar con el ID del ejecutivo autenticado cuando exista sistema de login
+export const EJECUTIVO_ID    = 'JV';
 
 export const AGENT_LABELS: Record<string, string> = {
   agent0_orquestador:          'Orquestador',

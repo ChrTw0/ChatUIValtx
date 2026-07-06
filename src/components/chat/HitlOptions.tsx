@@ -15,7 +15,7 @@ export function HitlOptions({ hitl, onSelect }: Props) {
         {hitl.opciones.map((opcion, i) => (
           <button
             key={i}
-            onClick={() => onSelect(String(i + 1), i)}
+            onClick={() => onSelect(opcion, i)}
             style={{
               textAlign: 'left',
               padding: '8px 12px',

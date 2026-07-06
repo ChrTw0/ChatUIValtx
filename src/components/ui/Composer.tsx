@@ -1,14 +1,21 @@
 import { useState, useRef } from 'react';
 import './Composer.styles.css';
-import { IconAttach, IconSend } from './icons';
+import { IconAttach, IconSend, IconDocument, IconClose } from './icons';
+
+interface PendingFile {
+  id: string;
+  name: string;
+}
 
 interface Props {
   onSend: (text: string) => void;
   onAttach: (file: File) => void;
+  onRemoveFile?: (id: string) => void;
+  pendingFiles?: PendingFile[];
   disabled?: boolean;
 }
 
-export function Composer({ onSend, onAttach, disabled }: Props) {
+export function Composer({ onSend, onAttach, onRemoveFile, pendingFiles = [], disabled }: Props) {
   const [input, setInput] = useState('');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -32,10 +39,9 @@ export function Composer({ onSend, onAttach, disabled }: Props) {
   }
 
   function submit() {
-    if (!input.trim()) return;
+    if (!input.trim() && pendingFiles.length === 0) return;
     onSend(input);
     setInput('');
-    // reset altura tras enviar
     if (textareaRef.current) textareaRef.current.style.height = 'auto';
   }
 
@@ -50,10 +56,31 @@ export function Composer({ onSend, onAttach, disabled }: Props) {
     fileInput.click();
   }
 
+  const canSend = !disabled && (input.trim().length > 0 || pendingFiles.length > 0);
+
   return (
     <div className="ChatFooter">
+      {pendingFiles.length > 0 && (
+        <div className="Composer-files">
+          {pendingFiles.map(f => (
+            <div key={f.id} className="Composer-fileChip">
+              <IconDocument className="Composer-fileChip-icon" />
+              <span className="Composer-fileChip-name" title={f.name}>{f.name}</span>
+              {onRemoveFile && (
+                <button
+                  className="Composer-fileChip-remove"
+                  onClick={() => onRemoveFile(f.id)}
+                  aria-label={`Quitar ${f.name}`}
+                >
+                  <IconClose className="Composer-fileChip-removeIcon" />
+                </button>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
       <div className="Composer">
-        <button className="Composer-attach" onClick={handleAttachClick} title="Adjuntar archivo" aria-label="Adjuntar archivo">
+        <button className="Composer-attach" onClick={handleAttachClick} title="Adjuntar archivo" aria-label="Adjuntar archivo" disabled={disabled}>
           <IconAttach className="Composer-attachIcon" />
         </button>
         <div className="Composer-inputWrap">
@@ -63,7 +90,7 @@ export function Composer({ onSend, onAttach, disabled }: Props) {
             value={input}
             onChange={handleChange}
             onKeyDown={handleKeyDown}
-            placeholder="Escribe tu mensaje..."
+            placeholder={pendingFiles.length > 0 ? 'Añade un mensaje o envía directo…' : 'Escribe tu mensaje...'}
             rows={1}
             disabled={disabled}
           />
@@ -71,7 +98,7 @@ export function Composer({ onSend, onAttach, disabled }: Props) {
         <button
           className="Composer-sendBtn"
           onClick={submit}
-          disabled={disabled || !input.trim()}
+          disabled={!canSend}
           aria-label="Enviar"
         >
           <IconSend className="Composer-sendIcon" />

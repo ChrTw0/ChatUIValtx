@@ -57,7 +57,7 @@ export function DraftPanel({ draftActivo, onCerrar, enviar }: Props) {
       <div className="draft-panel__header">
         <button className="draft-panel__cerrar" onClick={onCerrar} aria-label="Cerrar panel">✕</button>
         <div className="draft-panel__header-info">
-          <span className="draft-panel__titulo">Borrador PTE {version}</span>
+          <span className="draft-panel__titulo">{draft?.contenido.servicio ? String(draft.contenido.servicio) : `PTE ${version}`}</span>
           {draft && <span className="draft-panel__cliente">{draft.contenido.cliente ?? ''}</span>}
         </div>
       </div>

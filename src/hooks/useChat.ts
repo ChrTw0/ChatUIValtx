@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect } from 'react';
+import { useRef, useState } from 'react';
 import { useMessages, useQuickReplies } from '@chatui/core';
 import { sendMessage } from '../api/chat';
 import { fetchDraft } from '../api/drafts';
@@ -17,7 +17,7 @@ export function useChat(onDraft?: (draft: DraftData) => void) {
   const { quickReplies, replace: setQuickReplies, visible: qrVisible, setVisible: setQrVisible } = useQuickReplies([]);
 
   const [thinking, setThinking]       = useState(false);
-  const [pendingFiles, setPending]     = useState<string[]>([]);
+  const [pendingFiles, setPending]     = useState<{ id: string; name: string }[]>([]);
   const [thinkingFase, setThinkingFase] = useState<ThinkingFase>({ tipo: 'idle' });
 
   // ref para el guard interno (evita closure stale en el handler SSE)
@@ -44,17 +44,22 @@ export function useChat(onDraft?: (draft: DraftData) => void) {
     setThinking(true);
     setThinkingFase({ tipo: 'skeleton' });
 
-    appendMsg({ type: 'text', content: { text: t || hitlDecision || '' }, position: 'right' });
+    // Construir texto del mensaje del usuario para el historial
+    const fileNames = pendingFiles.map(f => f.name);
+    const userText = [t || hitlDecision || '', ...fileNames].filter(Boolean).join('\n');
+    appendMsg({ type: 'text', content: { text: userText }, position: 'right' });
     const botId = appendMsg({ type: 'text', content: { text: '' }, position: 'left' });
     let botMsgSet = false;
     let prevTraceId: string | undefined;
+
+    const fileIds = pendingFiles.map(f => f.id);
 
     try {
       await sendMessage({
         texto: hitlDecision || t,
         ejecutivo_id: EJECUTIVO_ID,
         session_id: sessionId.current,
-        file_ids: pendingFiles.length ? [...pendingFiles] : undefined,
+        file_ids: fileIds.length ? fileIds : undefined,
       });
       setPending([]);
     } catch {
@@ -121,13 +126,8 @@ export function useChat(onDraft?: (draft: DraftData) => void) {
       }
 
       if (e.tipo === 'narrativa' && e.mensaje) {
-        // Si ya hay bubbles previos (on_respuesta intermedios), narrativa va como bubble nuevo
-        if (!botMsgSet) {
-          updateMsg(botId, { type: 'text', content: { text: e.mensaje, agente }, position: 'left' });
-          botMsgSet = true;
-        } else {
-          appendMsg({ type: 'text', content: { text: e.mensaje, agente }, position: 'left' });
-        }
+        // Siempre bubble independiente — nunca toca botId (reservado para el LLM)
+        appendMsg({ type: 'text', content: { text: e.mensaje, agente }, position: 'left' });
       }
 
       if (e.tipo === 'hitl' && e.datos) {
@@ -178,11 +178,14 @@ export function useChat(onDraft?: (draft: DraftData) => void) {
   async function adjuntar(file: File) {
     try {
       const id = await uploadFile(file, EJECUTIVO_ID);
-      setPending(prev => [...prev, id]);
-      appendMsg({ type: 'text', content: { text: file.name }, position: 'right' });
+      setPending(prev => [...prev, { id, name: file.name }]);
     } catch {
       appendMsg({ type: 'text', content: { text: `No se pudo subir ${file.name}` }, position: 'right' });
     }
+  }
+
+  function quitarArchivo(id: string) {
+    setPending(prev => prev.filter(f => f.id !== id));
   }
 
   return {
@@ -194,5 +197,7 @@ export function useChat(onDraft?: (draft: DraftData) => void) {
     hitl,
     enviar,
     adjuntar,
+    pendingFiles,
+    quitarArchivo,
   };
 }

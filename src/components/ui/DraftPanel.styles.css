@@ -2,17 +2,17 @@
   display: flex;
   flex-direction: column;
   height: 100%;
-  background: var(--color-fill-2, #f8f9fa);
+  background: var(--color-fill-2);
   border-left: 1px solid var(--color-line-2);
   overflow: hidden;
 }
 
-/* Header */
+/* ── Header ── */
 .DraftPanel-header {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
-  padding: 14px 16px 12px;
+  padding: 16px 18px 14px;
   border-bottom: 1px solid var(--color-line-2);
   flex-shrink: 0;
   background: var(--color-fill-1);
@@ -20,23 +20,25 @@
 
 .DraftPanel-headerLeft {
   display: flex;
-  flex-direction: column;
-  gap: 2px;
+  align-items: baseline;
+  gap: 8px;
   min-width: 0;
 }
 
 .DraftPanel-title {
   font-size: 14px;
-  font-weight: 600;
+  font-weight: 700;
   color: var(--color-text-1);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  letter-spacing: -.01em;
 }
 
 .DraftPanel-meta {
   font-size: 11px;
   color: var(--color-text-3);
+  font-weight: 500;
 }
 
 .DraftPanel-close {
@@ -50,93 +52,260 @@
   border: none;
   cursor: pointer;
   color: var(--color-text-3);
-  border-radius: var(--radius-sm, 6px);
+  border-radius: var(--radius-sm);
   transition: color .15s, background .15s;
-  margin-left: 8px;
 }
 .DraftPanel-close:hover {
   color: var(--color-text-1);
   background: var(--color-line-2);
 }
+.DraftPanel-closeIcon { width: 16px; height: 16px; }
 
-.DraftPanel-closeIcon {
-  width: 16px;
-  height: 16px;
-}
-
-/* Campos incompletos */
-.DraftPanel-incompletos {
-  padding: 8px 16px;
-  font-size: 11px;
-  color: var(--color-text-3);
-  background: var(--brand-3, #ffe0cc);
+/* ── Barra de progreso ── */
+.DraftPanel-progress {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 18px 12px;
+  background: var(--color-fill-1);
   border-bottom: 1px solid var(--color-line-2);
   flex-shrink: 0;
 }
 
+.DraftPanel-progressBar {
+  flex: 1;
+  height: 5px;
+  background: var(--gray-7);
+  border-radius: 99px;
+  overflow: hidden;
+}
+
+.DraftPanel-progressFill {
+  height: 100%;
+  background: var(--brand-1);
+  border-radius: 99px;
+  transition: width .5s cubic-bezier(.4,0,.2,1);
+}
+
+.DraftPanel-progressPct {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--brand-1);
+  min-width: 32px;
+  text-align: right;
+}
+
+/* ── Chips pendientes ── */
+.DraftPanel-incompletos {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  padding: 10px 18px 12px;
+  background: var(--brand-4);
+  border-bottom: 1px solid #ffd5b8;
+  flex-shrink: 0;
+}
+
 .DraftPanel-incompletosLabel {
-  font-weight: 600;
-  margin-right: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .07em;
+  text-transform: uppercase;
   color: var(--brand-1);
 }
 
-/* Body — campos editables */
+.DraftPanel-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.DraftPanel-chip {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--brand-1);
+  background: #fff;
+  border: 1px solid #ffc8a0;
+  border-radius: 99px;
+  padding: 2px 9px;
+  white-space: nowrap;
+}
+
+/* ── Body ── */
 .DraftPanel-body {
   flex: 1;
   overflow-y: auto;
-  padding: 12px 16px;
+  padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 0;
 }
 
+/* ── Campos — tabla dos columnas ── */
 .DraftPanel-field {
+  display: grid;
+  grid-template-columns: 140px 1fr;
+  grid-template-rows: auto 1fr;
+  min-height: 56px;
+  border-bottom: 1px solid var(--color-line-2);
+}
+.DraftPanel-field:last-child { border-bottom: none; }
+
+.DraftPanel-labelRow {
   display: flex;
   flex-direction: column;
+  justify-content: flex-start;
   gap: 4px;
+  padding: 12px 14px 12px 18px;
+  border-right: 1px solid var(--color-line-2);
+  background: var(--color-fill-2);
 }
 
 .DraftPanel-label {
-  font-size: 11px;
-  font-weight: 600;
+  font-size: 10px;
+  font-weight: 700;
   color: var(--color-text-3);
   text-transform: uppercase;
-  letter-spacing: .04em;
+  letter-spacing: .06em;
+  line-height: 1.4;
+}
+
+.DraftPanel-badge {
+  font-size: 10px;
+  font-weight: 600;
+  border-radius: 99px;
+  padding: 1px 7px;
+  align-self: flex-start;
+}
+
+.DraftPanel-badge--pte {
+  color: var(--brand-1);
+  background: var(--brand-4);
+  border: 1px solid #ffc8a0;
+}
+
+.DraftPanel-badge--ok {
+  color: #888;
+  background: var(--gray-7);
+}
+
+.DraftPanel-badge--nuevo {
+  color: #1a7f4b;
+  background: #e3fcef;
+  border: 1px solid #a8e6c7;
+}
+
+.DraftPanel-badge--editado {
+  color: #7c5800;
+  background: #fff8e1;
+  border: 1px solid #ffe082;
 }
 
 .DraftPanel-textarea {
   width: 100%;
-  padding: 8px 10px;
+  min-height: 44px;
+  max-height: 200px;
+  padding: 12px 14px;
   font-size: 13px;
   font-family: inherit;
-  line-height: 1.55;
+  line-height: 1.6;
   color: var(--color-text-1);
   background: var(--color-fill-1);
-  border: 1px solid transparent;
-  border-radius: var(--radius-sm, 6px);
+  border: none;
   resize: none;
   outline: none;
-  transition: border-color .15s;
+  overflow-y: auto;
   box-sizing: border-box;
+  transition: background .15s;
 }
-.DraftPanel-textarea:hover {
-  border-color: var(--color-line-2);
+
+.DraftPanel-field--pte .DraftPanel-labelRow {
+  background: #fff8f4;
 }
+.DraftPanel-field--pte .DraftPanel-label {
+  color: var(--brand-1);
+}
+.DraftPanel-field--pte .DraftPanel-textarea {
+  background: #fffcfa;
+}
+.DraftPanel-field--pte .DraftPanel-textarea::placeholder {
+  color: #c8a08a;
+  font-style: italic;
+  font-size: 12px;
+}
+
+.DraftPanel-field--nuevo .DraftPanel-label {
+  color: #22a06b;
+}
+.DraftPanel-field--nuevo .DraftPanel-textarea {
+  background: #f8fef9;
+}
+
 .DraftPanel-textarea:focus {
-  border-color: var(--brand-1);
+  background: #fffdf9;
+  box-shadow: inset 2px 0 0 var(--brand-1);
 }
+
 .DraftPanel-textarea:disabled {
   opacity: .6;
   cursor: not-allowed;
 }
 
-/* Footer — botones */
+/* ── Títulos de sección ── */
+.DraftPanel-seccionTitulo {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .07em;
+  text-transform: uppercase;
+  padding: 10px 0 6px;
+  border: none;
+  background: none;
+  font-family: inherit;
+  text-align: left;
+  width: 100%;
+}
+
+.DraftPanel-seccionTitulo--pte {
+  color: var(--brand-1);
+}
+
+.DraftPanel-seccionTitulo--ok {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #22a06b;
+  cursor: pointer;
+  margin-top: 6px;
+  transition: opacity .15s;
+}
+.DraftPanel-seccionTitulo--ok:hover { opacity: .75; }
+
+/* ── Botón ¿Correcto? inline (en labelRow) ── */
+.DraftPanel-btnListoInline {
+  font-size: 10px;
+  font-weight: 700;
+  font-family: inherit;
+  color: var(--brand-1);
+  background: var(--brand-4);
+  border: 1px solid #ffc8a0;
+  border-radius: 99px;
+  padding: 2px 8px;
+  cursor: pointer;
+  transition: background .15s, border-color .15s;
+  white-space: nowrap;
+}
+.DraftPanel-btnListoInline:hover {
+  background: var(--brand-3);
+  border-color: var(--brand-1);
+}
+
+/* ── Footer ── */
 .DraftPanel-footer {
   display: flex;
   align-items: center;
   justify-content: flex-end;
   gap: 8px;
-  padding: 12px 16px;
+  padding: 12px 18px;
   border-top: 1px solid var(--color-line-2);
   flex-shrink: 0;
   background: var(--color-fill-1);
@@ -149,8 +318,9 @@
   color: var(--color-text-3);
   background: none;
   border: 1px solid var(--color-line-2);
-  border-radius: var(--radius-sm, 6px);
+  border-radius: var(--radius-sm);
   cursor: pointer;
+  font-family: inherit;
   transition: border-color .15s, color .15s;
 }
 .DraftPanel-btnCancelar:hover:not(:disabled) {
@@ -163,18 +333,27 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 7px 14px;
+  padding: 8px 16px;
   font-size: 13px;
-  font-weight: 600;
+  font-weight: 700;
   color: #fff;
   background: var(--brand-1);
   border: none;
-  border-radius: var(--radius-sm, 6px);
+  border-radius: var(--radius-sm);
   cursor: pointer;
-  transition: background .15s;
+  font-family: inherit;
+  transition: background .15s, opacity .15s, transform .1s;
+  letter-spacing: -.01em;
 }
-.DraftPanel-btnGuardar:hover:not(:disabled) { background: #e05500; }
-.DraftPanel-btnGuardar:disabled { opacity: .6; cursor: not-allowed; }
+.DraftPanel-btnGuardar:hover:not(:disabled) {
+  background: #e05500;
+  transform: translateY(-1px);
+}
+.DraftPanel-btnGuardar:disabled {
+  opacity: .4;
+  cursor: not-allowed;
+  transform: none;
+}
 
 .DraftPanel-spinner {
   width: 14px;
@@ -182,6 +361,24 @@
   animation: spin .8s linear infinite;
 }
 
-@keyframes spin {
-  to { transform: rotate(360deg); }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+@keyframes checkPop {
+  0%   { transform: scale(.6); opacity: 0; }
+  60%  { transform: scale(1.2); opacity: 1; }
+  100% { transform: scale(1);   opacity: 1; }
+}
+
+@keyframes fieldFadeOut {
+  0%   { opacity: 1; transform: translateY(0); }
+  100% { opacity: 0; transform: translateY(6px); }
+}
+
+.DraftPanel-badge--anim {
+  animation: checkPop .3s cubic-bezier(.4,0,.2,1) forwards;
+}
+
+.DraftPanel-field--check {
+  animation: fieldFadeOut .4s ease .35s forwards;
+  pointer-events: none;
 }
