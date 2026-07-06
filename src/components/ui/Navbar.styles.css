@@ -22,3 +22,23 @@
   font-weight: 500;
   color: var(--color-text-1);
 }
+.Navbar-indicadores {
+  position: absolute;
+  right: var(--gutter);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 11px;
+  border-radius: 5px;
+  border: 1px solid var(--color-line-2);
+  background: var(--color-fill-2);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-text-2);
+  cursor: pointer;
+  transition: border-color .12s, color .12s;
+}
+.Navbar-indicadores:hover {
+  border-color: var(--brand-1);
+  color: var(--brand-1);
+}

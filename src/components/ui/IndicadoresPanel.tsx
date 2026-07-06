@@ -1,6 +1,6 @@
-import { useState, useRef, useEffect, useCallback } from 'react';
-import './DashboardMockup.css';
-import { apiFetch } from '../api/client';
+import { useState, useRef, useEffect } from 'react';
+import { apiFetch } from '../../api/client';
+import './IndicadoresPanel.styles.css';
 
 // ─── SVG Icons ────────────────────────────────────────────────────────────────
 
@@ -56,16 +56,14 @@ function Sparkline({ values, color }: { values: number[]; color: string }) {
 }
 
 function LoadingRow() {
-  return <div className="DM-loading">Cargando…</div>;
+  return <div className="IP-loading">Cargando…</div>;
 }
 
 function ErrorRow({ msg }: { msg: string }) {
-  return <div className="DM-error">{msg}</div>;
+  return <div className="IP-error">{msg}</div>;
 }
 
 // ─── Tipos ────────────────────────────────────────────────────────────────────
-
-type Semaforo = 'rojo' | 'amarillo' | 'verde';
 
 interface ResumenData {
   oportunidades_activas: number;
@@ -76,10 +74,12 @@ interface ResumenData {
   contratos_vencer_30d: number;
 }
 
+type Semaforo = 'rojo' | 'amarillo' | 'verde';
+
 interface ContratoItem {
   contrato_id: number; lado: string; nombre: string; descripcion: string;
   dias_restantes: number; semaforo: Semaforo;
-  cuota_usd?: number; cuota_pen?: number; moneda?: string;
+  cuota_usd?: number; cuota_pen?: number;
   frecuencia_pago: string | null;
   fecha_fin: string;
   responsable: string;
@@ -103,7 +103,6 @@ interface ActividadItem {
 
 interface ActividadData { actividades: ActividadItem[] }
 
-// alias para recta temporal
 type EstadoContrato = 'activo' | 'vencido' | 'futuro';
 interface ContratoGantt {
   nombre: string; lado: string; responsable: string;
@@ -152,10 +151,8 @@ function calcJitter(positions: number[]): number[] {
   });
 }
 
-function contratoToGantt(c: ContratoItem): ContratoGantt {
+function contratoToGantt(c: ContratoItem, hoy: Date): ContratoGantt {
   const fin = new Date(c.fecha_fin);
-  const hoy = new Date();
-  hoy.setHours(0, 0, 0, 0);
   const estado: EstadoContrato = fin < hoy ? 'vencido' : c.dias_restantes > 365 ? 'futuro' : 'activo';
   const monto = c.cuota_usd != null
     ? `$${c.cuota_usd.toLocaleString('es-PE')}`
@@ -172,9 +169,8 @@ function barColorGantt(c: ContratoGantt, hoy: Date): string {
 }
 
 function Chip({ lado }: { lado: string }) {
-  const isCliente = lado === 'cliente';
   return (
-    <span className={`DM-chip${isCliente ? ' DM-chip--cliente' : ' DM-chip--proveedor'}`}>
+    <span className={`IP-chip${lado === 'cliente' ? ' IP-chip--cliente' : ' IP-chip--proveedor'}`}>
       {lado}
     </span>
   );
@@ -187,7 +183,7 @@ function ModuloResumen() {
   const [err, setErr]   = useState('');
 
   useEffect(() => {
-    apiFetch('/api/v1/indicadores/resumen')
+    apiFetch('/indicadores/resumen')
       .then(r => r.json())
       .then(setData)
       .catch(() => setErr('No se pudo cargar el resumen'));
@@ -202,7 +198,7 @@ function ModuloResumen() {
       value: String(data.oportunidades_activas),
       delta: `Pipeline $${(data.pipeline_usd / 1000).toFixed(0)}K USD`,
       alert: false, warn: false,
-      spark: [data.oportunidades_activas - 4, data.oportunidades_activas - 2, data.oportunidades_activas],
+      spark: [Math.max(0, data.oportunidades_activas - 4), Math.max(0, data.oportunidades_activas - 2), data.oportunidades_activas],
     },
     {
       label: 'Pipeline USD',
@@ -216,30 +212,30 @@ function ModuloResumen() {
       value: String(data.sla_vencidos),
       delta: data.sla_vencidos > 0 ? 'Requieren atención' : 'Sin vencidos',
       alert: data.sla_vencidos > 0, warn: false,
-      spark: [0, data.sla_vencidos > 1 ? data.sla_vencidos - 1 : 0, data.sla_vencidos],
+      spark: [0, Math.max(0, data.sla_vencidos - 1), data.sla_vencidos],
     },
     {
       label: 'Contratos críticos',
       value: String(data.contratos_vencer_30d),
       delta: `${data.compromisos_vencidos} compromisos vencidos`,
       alert: false, warn: data.contratos_vencer_30d > 0,
-      spark: [0, data.contratos_vencer_30d > 1 ? data.contratos_vencer_30d - 1 : 0, data.contratos_vencer_30d],
+      spark: [0, Math.max(0, data.contratos_vencer_30d - 1), data.contratos_vencer_30d],
     },
   ];
 
   return (
-    <div className="DM-kpi-grid">
+    <div className="IP-kpi-grid">
       {kpis.map(k => {
         const sparkColor = k.alert ? '#dc2626' : k.warn ? '#d97706' : '#16a34a';
-        const deltaClass  = k.alert ? 'DM-kpi-delta--bad' : k.warn ? 'DM-kpi-delta--warn' : 'DM-kpi-delta--ok';
+        const deltaClass  = k.alert ? 'IP-kpi-delta--bad' : k.warn ? 'IP-kpi-delta--warn' : 'IP-kpi-delta--ok';
         return (
-          <div key={k.label} className={`DM-kpi-card${k.alert ? ' DM-kpi-card--alert' : k.warn ? ' DM-kpi-card--warn' : ''}`}>
-            <div className="DM-kpi-top">
-              <span className="DM-kpi-val">{k.value}</span>
+          <div key={k.label} className={`IP-kpi-card${k.alert ? ' IP-kpi-card--alert' : k.warn ? ' IP-kpi-card--warn' : ''}`}>
+            <div className="IP-kpi-top">
+              <span className="IP-kpi-val">{k.value}</span>
               <Sparkline values={k.spark} color={sparkColor} />
             </div>
-            <div className="DM-kpi-label">{k.label}</div>
-            <div className={`DM-kpi-delta ${deltaClass}`}>{k.delta}</div>
+            <div className="IP-kpi-label">{k.label}</div>
+            <div className={`IP-kpi-delta ${deltaClass}`}>{k.delta}</div>
           </div>
         );
       })}
@@ -247,7 +243,7 @@ function ModuloResumen() {
   );
 }
 
-// ─── Módulo 2: Contratos — recta temporal scrolleable ────────────────────────
+// ─── Módulo 2: Contratos — recta temporal ────────────────────────────────────
 
 function getTlTicks(hoy: Date): { x: number; label: string; isHoy: boolean }[] {
   const ticks: { x: number; label: string; isHoy: boolean }[] = [];
@@ -264,21 +260,19 @@ function getTlTicks(hoy: Date): { x: number; label: string; isHoy: boolean }[] {
 }
 
 function ModuloContratos() {
-  const [data, setData]       = useState<ContratoGantt[] | null>(null);
-  const [raw, setRaw]         = useState<ContratoItem[]>([]);
+  const [gantt, setGantt]       = useState<ContratoGantt[] | null>(null);
+  const [raw, setRaw]           = useState<ContratoItem[]>([]);
   const [selected, setSelected] = useState<number | null>(null);
-  const [err, setErr]         = useState('');
-  const scrollRef             = useRef<HTMLDivElement>(null);
-
-  const HOY = new Date();
-  HOY.setHours(0, 0, 0, 0);
+  const [err, setErr]           = useState('');
+  const scrollRef               = useRef<HTMLDivElement>(null);
+  const HOY = new Date(); HOY.setHours(0, 0, 0, 0);
 
   useEffect(() => {
-    apiFetch('/api/v1/indicadores/contratos-vencer?dias=500')
+    apiFetch('/indicadores/contratos-vencer?dias=500')
       .then(r => r.json())
       .then((d: ContratosData) => {
         setRaw(d.items);
-        setData(d.items.map(contratoToGantt));
+        setGantt(d.items.map(c => contratoToGantt(c, HOY)));
       })
       .catch(() => setErr('No se pudo cargar contratos'));
   }, []);
@@ -288,28 +282,25 @@ function ModuloContratos() {
       const w = scrollRef.current.clientWidth;
       scrollRef.current.scrollLeft = TL_TODAY_X - w * 0.33;
     }
-  }, [data]);
+  }, [gantt]);
 
-  if (err)   return <ErrorRow msg={err} />;
-  if (!data) return <LoadingRow />;
+  if (err)    return <ErrorRow msg={err} />;
+  if (!gantt) return <LoadingRow />;
 
   const ticks     = getTlTicks(HOY);
-  const positions = data.map(c => TL_TODAY_X + daysBetween(HOY, c.fin) * TL_PPD);
+  const positions = gantt.map(c => TL_TODAY_X + daysBetween(HOY, c.fin) * TL_PPD);
   const jitter    = calcJitter(positions);
-  const sel       = selected !== null ? data[selected] : null;
+  const sel       = selected !== null ? gantt[selected] : null;
   const selRaw    = selected !== null ? raw[selected] : null;
 
   return (
-    <div className="DM-tl2-wrap">
-      <div className="DM-tl2-scroll" ref={scrollRef}>
+    <div className="IP-tl-wrap">
+      <div className="IP-tl-scroll" ref={scrollRef}>
         <svg width={TL_TOTAL_W} height={TL_SVG_H}>
-
-          {/* zonas urgencia */}
           <rect x={TL_TODAY_X - 30 * TL_PPD} y={TL_LINE_Y - 10}
             width={30 * TL_PPD} height={20} fill="#dc262610" rx="2" />
           <rect x={TL_TODAY_X} y={TL_LINE_Y - 10}
             width={90 * TL_PPD} height={20} fill="#d9770608" rx="2" />
-
           <line x1={0} y1={TL_LINE_Y} x2={TL_TOTAL_W} y2={TL_LINE_Y}
             stroke="var(--color-line-2)" strokeWidth="1" />
 
@@ -321,18 +312,16 @@ function ModuloContratos() {
                 stroke={t.isHoy ? 'var(--brand-1, #ff6200)' : 'var(--color-line-2)'}
                 strokeWidth={t.isHoy ? 1.5 : 1}
               />
-              <text x={t.x} y={TL_LINE_Y + 18}
-                textAnchor="middle" fontSize="8.5"
+              <text x={t.x} y={TL_LINE_Y + 18} textAnchor="middle" fontSize="8.5"
                 fontWeight={t.isHoy ? '700' : '400'}
                 fill={t.isHoy ? 'var(--brand-1, #ff6200)' : 'var(--color-text-3)'}
-                fontFamily="system-ui" style={{ userSelect: 'none' }}
-              >
+                fontFamily="system-ui" style={{ userSelect: 'none' }}>
                 {t.label}
               </text>
             </g>
           ))}
 
-          {data.map((c, i) => {
+          {gantt.map((c, i) => {
             const x      = positions[i];
             const cy     = TL_LINE_Y - jitter[i];
             const color  = barColorGantt(c, HOY);
@@ -342,7 +331,6 @@ function ModuloContratos() {
             const connY2 = arriba ? cy - 1  : cy + 1;
             const isSel  = selected === i;
             const r      = isSel ? 7 : 5;
-
             return (
               <g key={c.nombre} style={{ cursor: 'pointer' }}
                 onClick={() => setSelected(selected === i ? null : i)}>
@@ -351,20 +339,16 @@ function ModuloContratos() {
                     stroke={color} strokeWidth="1" strokeDasharray="2 2" opacity=".3" />
                 )}
                 <line x1={x} y1={connY1} x2={x} y2={connY2}
-                  stroke={color} strokeWidth="1"
-                  strokeDasharray="2 2" opacity={isSel ? '.8' : '.4'} />
-                <text x={x} y={labelY}
-                  textAnchor="middle" fontSize="8.5"
+                  stroke={color} strokeWidth="1" strokeDasharray="2 2" opacity={isSel ? '.8' : '.4'} />
+                <text x={x} y={labelY} textAnchor="middle" fontSize="8.5"
                   fontWeight={isSel ? '700' : '500'}
                   fill={isSel ? color : 'var(--color-text-2)'}
-                  fontFamily="system-ui" style={{ userSelect: 'none' }}
-                >
+                  fontFamily="system-ui" style={{ userSelect: 'none' }}>
                   {c.nombre.split(' — ')[0].split(' ').slice(0, 2).join(' ')}
                 </text>
                 <circle cx={x} cy={cy} r={r}
                   fill={isSel ? color : `${color}22`}
-                  stroke={color} strokeWidth={isSel ? 0 : 1.5}
-                />
+                  stroke={color} strokeWidth={isSel ? 0 : 1.5} />
                 {isSel && <circle cx={x} cy={cy} r={2.5} fill="rgba(255,255,255,.85)" />}
               </g>
             );
@@ -373,25 +357,25 @@ function ModuloContratos() {
       </div>
 
       {sel && selRaw && (
-        <div className="DM-gantt-detail" key={selected}>
-          <div className="DM-gantt-detail-top">
-            <span className="DM-gantt-detail-nombre">{sel.nombre}</span>
+        <div className="IP-detail" key={selected}>
+          <div className="IP-detail-top">
+            <span className="IP-detail-nombre">{sel.nombre}</span>
             <Chip lado={sel.lado} />
-            <button className="DM-gantt-detail-close" onClick={() => setSelected(null)}>✕</button>
+            <button className="IP-detail-close" onClick={() => setSelected(null)}>✕</button>
           </div>
-          <div className="DM-gantt-detail-meta">
+          <div className="IP-detail-meta">
             {([
-              { k: 'fin',    v: fmtDate(sel.fin),        c: barColorGantt(sel, HOY) },
-              { k: 'días',   v: String(selRaw.dias_restantes), c: undefined },
-              { k: 'monto',  v: sel.monto,                c: undefined },
-              { k: 'resp.',  v: sel.responsable,          c: undefined },
+              { k: 'fin',   v: fmtDate(sel.fin),               c: barColorGantt(sel, HOY) },
+              { k: 'días',  v: String(selRaw.dias_restantes),   c: undefined },
+              { k: 'monto', v: sel.monto,                       c: undefined },
+              { k: 'resp.', v: sel.responsable,                 c: undefined },
             ] as { k: string; v: string; c: string | undefined }[]).map((item, idx, arr) => (
               <>
-                <span key={item.k} className="DM-gantt-detail-item">
-                  <span className="DM-gantt-detail-key">{item.k}</span>
-                  <span className="DM-gantt-detail-val" style={{ color: item.c }}>{item.v}</span>
+                <span key={item.k} className="IP-detail-item">
+                  <span className="IP-detail-key">{item.k}</span>
+                  <span className="IP-detail-val" style={{ color: item.c }}>{item.v}</span>
                 </span>
-                {idx < arr.length - 1 && <span key={`s${idx}`} className="DM-gantt-detail-sep">·</span>}
+                {idx < arr.length - 1 && <span key={`s${idx}`} className="IP-detail-sep">·</span>}
               </>
             ))}
           </div>
@@ -401,14 +385,14 @@ function ModuloContratos() {
   );
 }
 
-// ─── Módulo 3: Compromisos — agrupado por responsable ────────────────────────
+// ─── Módulo 3: Compromisos ────────────────────────────────────────────────────
 
 function ModuloCompromisos() {
   const [data, setData] = useState<CompromisosData | null>(null);
   const [err, setErr]   = useState('');
 
   useEffect(() => {
-    apiFetch('/api/v1/indicadores/compromisos?vencidos_primero=true')
+    apiFetch('/indicadores/compromisos?vencidos_primero=true')
       .then(r => r.json())
       .then(setData)
       .catch(() => setErr('No se pudo cargar compromisos'));
@@ -423,24 +407,23 @@ function ModuloCompromisos() {
   }, {} as Record<string, CompromisoPendiente[]>);
 
   return (
-    <div className="DM-comp-wrap">
-      <div className="DM-comp-summary">
-        <span className="DM-comp-summary-total">{data.total} pendientes</span>
+    <div className="IP-comp-wrap">
+      <div className="IP-comp-summary">
+        <span className="IP-comp-summary-total">{data.total} pendientes</span>
         {data.vencidos > 0 && (
-          <span className="DM-comp-summary-vencidos">{data.vencidos} vencidos</span>
+          <span className="IP-comp-summary-vencidos">{data.vencidos} vencidos</span>
         )}
       </div>
-
       {Object.entries(grupos).map(([resp, items]) => (
-        <div key={resp} className="DM-comp-row">
-          <div className="DM-comp-avatar">{resp}</div>
-          <div className="DM-comp-items">
+        <div key={resp} className="IP-comp-row">
+          <div className="IP-comp-avatar">{resp}</div>
+          <div className="IP-comp-items">
             {items.map(item => (
               <div key={item.id}
-                className={`DM-comp-item${item.vencido ? ' DM-comp-item--vencido' : ''}`}>
-                <span className="DM-comp-cliente">{item.cliente}</span>
-                <span className="DM-comp-desc">{item.descripcion}</span>
-                <span className={`DM-comp-fecha${item.vencido ? ' DM-comp-fecha--vencido' : ''}`}>
+                className={`IP-comp-item${item.vencido ? ' IP-comp-item--vencido' : ''}`}>
+                <span className="IP-comp-cliente">{item.cliente}</span>
+                <span className="IP-comp-desc">{item.descripcion}</span>
+                <span className={`IP-comp-fecha${item.vencido ? ' IP-comp-fecha--vencido' : ''}`}>
                   {fmtFechaLimite(item.fecha_limite)}
                 </span>
               </div>
@@ -452,7 +435,7 @@ function ModuloCompromisos() {
   );
 }
 
-// ─── Módulo 4: Actividad — timeline proporcional al tiempo ───────────────────
+// ─── Módulo 4: Actividad ──────────────────────────────────────────────────────
 
 const tipoConfig: Record<string, { icon: () => JSX.Element; color: string }> = {
   reunion:   { icon: IconReunion,   color: '#0891b2' },
@@ -477,7 +460,7 @@ function ModuloActividad() {
   const [err, setErr]   = useState('');
 
   useEffect(() => {
-    apiFetch('/api/v1/indicadores/actividad-reciente?limit=20')
+    apiFetch('/indicadores/actividad-reciente?limit=20')
       .then(r => r.json())
       .then(setData)
       .catch(() => setErr('No se pudo cargar actividad'));
@@ -500,31 +483,35 @@ function ModuloActividad() {
   });
 
   return (
-    <div className="DM-act-timeline">
+    <div className="IP-act-timeline">
       {items.map((a, i) => {
         const cfg = tipoConfig[a.tipo] ?? tipoConfig.nota;
         return (
-          <div key={a.id} className="DM-act-item">
-            <div className="DM-act-left">
-              <div className="DM-act-type" style={{ color: cfg.color, background: cfg.color + '1a' }}>
+          <div key={a.id} className="IP-act-item">
+            <div className="IP-act-left">
+              <div className="IP-act-type" style={{ color: cfg.color, background: cfg.color + '1a' }}>
                 <cfg.icon />
               </div>
               {i < items.length - 1 && (
-                <div className="DM-act-connector" style={{ height: 10 + gaps[i] }} />
+                <div className="IP-act-connector" style={{ height: 10 + gaps[i] }} />
               )}
             </div>
-            <div className="DM-act-content">
-              <div className="DM-act-header">
-                <span className="DM-act-titulo">{a.titulo}</span>
-                <span className="DM-act-hace">{labelRelativo(a.minAtras)}</span>
+            <div className="IP-act-content">
+              <div className="IP-act-header">
+                <span className="IP-act-titulo">{a.titulo}</span>
+                <span className="IP-act-hace">{labelRelativo(a.minAtras)}</span>
               </div>
-              <div className="DM-act-meta">
-                <span className="DM-act-etapa"
-                  style={{ background: `${etapaColor[a.etapa] ?? '#64748b'}15`, color: etapaColor[a.etapa] ?? '#64748b', border: `1px solid ${etapaColor[a.etapa] ?? '#64748b'}30` }}>
+              <div className="IP-act-meta">
+                <span className="IP-act-etapa"
+                  style={{
+                    background: `${etapaColor[a.etapa] ?? '#64748b'}15`,
+                    color: etapaColor[a.etapa] ?? '#64748b',
+                    border: `1px solid ${etapaColor[a.etapa] ?? '#64748b'}30`,
+                  }}>
                   {a.etapa?.replace('_', ' ') ?? '—'}
                 </span>
-                <span className="DM-act-cliente">{a.cliente}</span>
-                <span className="DM-act-actor">{a.actor}</span>
+                <span className="IP-act-cliente">{a.cliente}</span>
+                <span className="IP-act-actor">{a.actor}</span>
               </div>
             </div>
           </div>
@@ -534,105 +521,56 @@ function ModuloActividad() {
   );
 }
 
-// ─── Tabs ─────────────────────────────────────────────────────────────────────
+// ─── Panel principal ──────────────────────────────────────────────────────────
 
-const tabs = [
+const TABS = [
   { id: 'resumen',     label: 'Resumen' },
   { id: 'contratos',   label: 'Contratos' },
   { id: 'compromisos', label: 'Pendientes' },
   { id: 'actividad',   label: 'Actividad' },
 ] as const;
-type TabId = typeof tabs[number]['id'];
+type TabId = typeof TABS[number]['id'];
 
-// ─── Chat feed ────────────────────────────────────────────────────────────────
-
-function ChatFeed() {
-  return (
-    <>
-      <div className="DM-msgRow DM-msgRow--user">
-        <div className="DM-bubble DM-bubble--user">muéstrame el dashboard</div>
-      </div>
-      <div className="DM-msgRow">
-        <div className="DM-avatar">V</div>
-        <div className="DM-bubble">Tenés <strong>3 SLAs vencidos</strong> y <strong>2 contratos críticos</strong>. Pipeline activo $185K.</div>
-      </div>
-      <div className="DM-msgRow DM-msgRow--user">
-        <div className="DM-bubble DM-bubble--user">¿el contrato más urgente?</div>
-      </div>
-      <div className="DM-msgRow">
-        <div className="DM-avatar">V</div>
-        <div className="DM-bubble">Microsoft 365 E3 — vence en <strong>18 días</strong>. Responsable: JCP.</div>
-      </div>
-    </>
-  );
+interface Props {
+  onClose: () => void;
 }
 
-// ─── Root ─────────────────────────────────────────────────────────────────────
-
-export function DashboardMockup() {
-  const [open, setOpen] = useState(false);
-  const [tab, setTab]   = useState<TabId>('resumen');
+export function IndicadoresPanel({ onClose }: Props) {
+  const [tab, setTab] = useState<TabId>('resumen');
 
   return (
-    <div className="DM-root">
-      <div className="DM-shell">
+    <div className="IP-overlay" onClick={onClose}>
+      <div className="IP-hud" onClick={e => e.stopPropagation()}>
 
-        <div className="DM-navbar">
-          <span className="DM-navbar-title">Valtx — Asistente Comercial</span>
-          <button className="DM-hudTrigger" onClick={() => setOpen(true)}>
-            Indicadores
-            <kbd className="DM-kbd">⌘D</kbd>
-          </button>
-        </div>
-
-        <div className="DM-feed"><ChatFeed /></div>
-
-        <div className="DM-composer">
-          <div className="DM-composer-input">Escribe un mensaje…</div>
-          <button className="DM-composer-send">↑</button>
-        </div>
-
-        {open && (
-          <div className="DM-overlay" onClick={() => setOpen(false)}>
-            <div className="DM-hud" onClick={e => e.stopPropagation()}>
-
-              <div className="DM-hud-header">
-                <div className="DM-hud-titleArea">
-                  <span className="DM-hud-statusdot" />
-                  <span className="DM-hud-title">Indicadores comerciales</span>
-                </div>
-                <button className="DM-hud-close" onClick={() => setOpen(false)}>✕</button>
-              </div>
-
-              <div className="DM-hud-tabbar">
-                {tabs.map(t => (
-                  <button
-                    key={t.id}
-                    className={`DM-tabBtn${tab === t.id ? ' DM-tabBtn--active' : ''}`}
-                    onClick={() => setTab(t.id)}
-                  >
-                    {t.label}
-                    {tab === t.id && <span className="DM-tabBtn-underline" />}
-                  </button>
-                ))}
-              </div>
-
-              <div key={tab} className="DM-hud-body">
-                {tab === 'resumen'     && <ModuloResumen />}
-                {tab === 'contratos'   && <ModuloContratos />}
-                {tab === 'compromisos' && <ModuloCompromisos />}
-                {tab === 'actividad'   && <ModuloActividad />}
-              </div>
-
-            </div>
+        <div className="IP-hud-header">
+          <div className="IP-hud-titleArea">
+            <span className="IP-hud-statusdot" />
+            <span className="IP-hud-title">Indicadores comerciales</span>
           </div>
-        )}
+          <button className="IP-hud-close" onClick={onClose}>✕</button>
+        </div>
+
+        <div className="IP-hud-tabbar">
+          {TABS.map(t => (
+            <button
+              key={t.id}
+              className={`IP-tabBtn${tab === t.id ? ' IP-tabBtn--active' : ''}`}
+              onClick={() => setTab(t.id)}
+            >
+              {t.label}
+              {tab === t.id && <span className="IP-tabBtn-underline" />}
+            </button>
+          ))}
+        </div>
+
+        <div key={tab} className="IP-hud-body">
+          {tab === 'resumen'     && <ModuloResumen />}
+          {tab === 'contratos'   && <ModuloContratos />}
+          {tab === 'compromisos' && <ModuloCompromisos />}
+          {tab === 'actividad'   && <ModuloActividad />}
+        </div>
 
       </div>
-
-      <p style={{ fontSize: 12, color: 'var(--color-text-3)', marginTop: 4 }}>
-        Haz click en "Indicadores" (navbar) para abrir el HUD
-      </p>
     </div>
   );
 }

@@ -1,0 +1,253 @@
+/* ─── Overlay ──────────────────────────────────────────────────────────────── */
+
+.IP-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(10, 12, 20, .45);
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: ipFadeIn .12s ease;
+}
+@keyframes ipFadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+/* ─── HUD ──────────────────────────────────────────────────────────────────── */
+
+.IP-hud {
+  width: 580px;
+  max-width: 96vw;
+  max-height: 86vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--color-fill-1);
+  border: 1px solid var(--color-line-2);
+  border-radius: 8px;
+  box-shadow: 0 20px 60px rgba(0,0,0,.22);
+  overflow: hidden;
+  animation: ipHudIn .2s cubic-bezier(.34,1.15,.64,1);
+}
+@keyframes ipHudIn {
+  from { opacity: 0; transform: scale(.95) translateY(-8px); }
+  to   { opacity: 1; transform: scale(1)   translateY(0); }
+}
+
+.IP-hud-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px 11px;
+  border-bottom: 1px solid var(--color-line-2);
+  flex-shrink: 0;
+}
+.IP-hud-titleArea { display: flex; align-items: center; gap: 8px; }
+.IP-hud-statusdot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: #16a34a; flex-shrink: 0;
+}
+.IP-hud-title { font-size: 13px; font-weight: 600; color: var(--color-text-1); }
+.IP-hud-close {
+  background: none; border: none; font-size: 12px;
+  color: var(--color-text-3); cursor: pointer;
+  padding: 4px 6px; border-radius: 4px; line-height: 1;
+  transition: background .1s, color .1s;
+}
+.IP-hud-close:hover { background: var(--color-fill-2); color: var(--color-text-1); }
+
+/* ─── Tab bar ──────────────────────────────────────────────────────────────── */
+
+.IP-hud-tabbar {
+  display: flex;
+  border-bottom: 1px solid var(--color-line-2);
+  padding: 0 4px;
+  flex-shrink: 0;
+}
+.IP-tabBtn {
+  position: relative;
+  padding: 10px 14px;
+  border: none; background: none; cursor: pointer;
+  font-size: 12px; font-weight: 500;
+  color: var(--color-text-3);
+  transition: color .12s;
+  white-space: nowrap;
+}
+.IP-tabBtn:hover { color: var(--color-text-2); }
+.IP-tabBtn--active { color: var(--color-text-1); font-weight: 600; }
+.IP-tabBtn-underline {
+  position: absolute;
+  bottom: -1px; left: 10px; right: 10px;
+  height: 2px; border-radius: 2px 2px 0 0;
+  background: var(--brand-1);
+  animation: ipUnderline .15s ease;
+}
+@keyframes ipUnderline {
+  from { transform: scaleX(0); opacity: 0; }
+  to   { transform: scaleX(1); opacity: 1; }
+}
+
+/* ─── Body ─────────────────────────────────────────────────────────────────── */
+
+.IP-hud-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 14px 16px;
+  animation: ipBodyIn .15s ease;
+}
+@keyframes ipBodyIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ─── Loading / Error ──────────────────────────────────────────────────────── */
+
+.IP-loading {
+  padding: 24px 0;
+  text-align: center;
+  font-size: 12px;
+  color: var(--color-text-3);
+}
+.IP-error {
+  padding: 16px;
+  font-size: 12px;
+  color: #dc2626;
+  border-left: 3px solid #dc2626;
+  background: #dc262608;
+}
+
+/* ─── Chip ─────────────────────────────────────────────────────────────────── */
+
+.IP-chip {
+  font-size: 9px; font-weight: 700;
+  padding: 2px 5px; border-radius: 3px;
+  letter-spacing: .05em; text-transform: uppercase;
+}
+.IP-chip--cliente   { background: #e3fcef; color: #1a7f4b; border: 1px solid #a8e6c7; }
+.IP-chip--proveedor { background: #fef9c3; color: #7c5800; border: 1px solid #fde68a; }
+
+/* ─── Módulo 1: KPI ────────────────────────────────────────────────────────── */
+
+.IP-kpi-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.IP-kpi-card {
+  background: var(--color-fill-2);
+  border: 1px solid var(--color-line-2);
+  border-radius: 6px;
+  border-left: 3px solid transparent;
+  padding: 14px;
+  overflow: hidden;
+}
+.IP-kpi-card--alert { border-left-color: #dc2626; }
+.IP-kpi-card--warn  { border-left-color: #d97706; }
+.IP-kpi-top {
+  display: flex; align-items: flex-end;
+  justify-content: space-between;
+  gap: 8px; margin-bottom: 8px;
+}
+.IP-kpi-val {
+  font-size: 28px; font-weight: 600;
+  letter-spacing: -.03em; color: var(--color-text-1);
+  line-height: 1; font-variant-numeric: tabular-nums;
+}
+.IP-kpi-label { font-size: 11px; font-weight: 500; color: var(--color-text-2); margin-bottom: 4px; }
+.IP-kpi-delta { font-size: 10px; font-weight: 500; }
+.IP-kpi-delta--ok   { color: #16a34a; }
+.IP-kpi-delta--bad  { color: #dc2626; }
+.IP-kpi-delta--warn { color: #d97706; }
+
+/* ─── Módulo 2: Contratos — recta temporal ────────────────────────────────── */
+
+.IP-tl-wrap { display: flex; flex-direction: column; gap: 8px; }
+.IP-tl-scroll { overflow-x: auto; overflow-y: hidden; }
+.IP-tl-scroll::-webkit-scrollbar       { height: 4px; }
+.IP-tl-scroll::-webkit-scrollbar-track { background: var(--color-fill-2); border-radius: 2px; }
+.IP-tl-scroll::-webkit-scrollbar-thumb { background: var(--color-line-2); border-radius: 2px; }
+.IP-tl-scroll::-webkit-scrollbar-thumb:hover { background: var(--color-text-3); }
+
+.IP-detail {
+  margin-top: 8px;
+  padding: 10px 12px;
+  border-radius: 5px;
+  border: 1px solid var(--color-line-2);
+  background: var(--color-fill-2);
+  animation: ipDetailIn .15s ease;
+}
+@keyframes ipDetailIn {
+  from { opacity: 0; transform: translateY(-3px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.IP-detail-top { display: flex; align-items: center; gap: 8px; margin-bottom: 7px; }
+.IP-detail-nombre {
+  font-size: 13px; font-weight: 600; color: var(--color-text-1);
+  flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.IP-detail-close {
+  background: none; border: none; font-size: 11px;
+  color: var(--color-text-3); cursor: pointer;
+  padding: 2px 5px; border-radius: 3px;
+  transition: background .1s; flex-shrink: 0;
+}
+.IP-detail-close:hover { background: var(--color-line-2); }
+.IP-detail-meta { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.IP-detail-item { display: flex; align-items: baseline; gap: 4px; }
+.IP-detail-key { font-size: 9px; color: var(--color-text-3); text-transform: uppercase; letter-spacing: .05em; }
+.IP-detail-val { font-size: 12px; font-weight: 600; color: var(--color-text-1); font-variant-numeric: tabular-nums; }
+.IP-detail-sep { color: var(--color-line-2); font-size: 11px; }
+
+/* ─── Módulo 3: Compromisos ────────────────────────────────────────────────── */
+
+.IP-comp-wrap { display: flex; flex-direction: column; gap: 0; }
+.IP-comp-summary { display: flex; align-items: center; gap: 8px; padding-bottom: 10px; margin-bottom: 2px; border-bottom: 1px solid var(--color-fill-2); }
+.IP-comp-summary-total { font-size: 11px; font-weight: 500; color: var(--color-text-2); }
+.IP-comp-summary-vencidos {
+  font-size: 10px; font-weight: 700; color: #dc2626;
+  background: #fee2e2; border: 1px solid #fecaca; border-radius: 3px; padding: 1px 6px;
+}
+.IP-comp-row {
+  display: flex; gap: 10px; padding: 10px 0;
+  border-bottom: 1px solid var(--color-fill-2); align-items: flex-start;
+}
+.IP-comp-row:last-child { border-bottom: none; }
+.IP-comp-avatar {
+  width: 28px; height: 28px; border-radius: 5px;
+  background: var(--color-fill-2); border: 1px solid var(--color-line-2);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px; font-weight: 700; color: var(--color-text-2);
+  flex-shrink: 0; margin-top: 1px;
+}
+.IP-comp-items { flex: 1; display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+.IP-comp-item {
+  display: flex; align-items: baseline; gap: 7px;
+  padding: 5px 8px; border-radius: 4px;
+  background: var(--color-fill-2); border-left: 2px solid transparent;
+}
+.IP-comp-item--vencido { border-left-color: #dc2626; }
+.IP-comp-cliente {
+  font-size: 9px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase;
+  color: var(--color-text-3); flex-shrink: 0; width: 68px;
+}
+.IP-comp-item--vencido .IP-comp-cliente { color: #dc2626; }
+.IP-comp-desc {
+  font-size: 11px; font-weight: 400; color: var(--color-text-1);
+  flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.IP-comp-fecha { font-size: 10px; font-weight: 500; color: var(--color-text-3); flex-shrink: 0; font-variant-numeric: tabular-nums; }
+.IP-comp-fecha--vencido { color: #dc2626; font-weight: 700; }
+
+/* ─── Módulo 4: Actividad ──────────────────────────────────────────────────── */
+
+.IP-act-timeline { display: flex; flex-direction: column; }
+.IP-act-item { display: flex; gap: 11px; }
+.IP-act-left { display: flex; flex-direction: column; align-items: center; flex-shrink: 0; width: 30px; }
+.IP-act-type { width: 30px; height: 30px; border-radius: 5px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.IP-act-connector { width: 1px; background: var(--color-line-2); margin: 3px 0; flex-shrink: 0; }
+.IP-act-content { flex: 1; padding-bottom: 4px; min-width: 0; }
+.IP-act-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; margin-bottom: 5px; padding-top: 7px; }
+.IP-act-titulo { font-size: 12px; font-weight: 500; color: var(--color-text-1); line-height: 1.3; }
+.IP-act-hace { font-size: 10px; color: var(--color-text-3); white-space: nowrap; flex-shrink: 0; font-variant-numeric: tabular-nums; }
+.IP-act-meta { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; padding-bottom: 2px; }
+.IP-act-etapa { font-size: 9px; font-weight: 600; padding: 2px 6px; border-radius: 3px; letter-spacing: .04em; text-transform: uppercase; }
+.IP-act-cliente { font-size: 11px; color: var(--color-text-2); font-weight: 500; }
+.IP-act-actor   { font-size: 11px; color: var(--color-text-3); }

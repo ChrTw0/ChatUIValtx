@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import './ChatApp.styles.css';
 import { useChat } from '../../hooks/useChat';
 import { useDraftPanel } from '../../hooks/useDraftPanel';
@@ -5,11 +6,13 @@ import { Navbar } from '../ui/Navbar';
 import { MessageList } from '../ui/MessageList';
 import { Composer } from '../ui/Composer';
 import { DraftPanel } from '../ui/DraftPanel';
+import { IndicadoresPanel } from '../ui/IndicadoresPanel';
 import { fetchDraft } from '../../api/drafts';
 import type { DraftData } from '../../types/api';
 
 export function ChatApp() {
   const panel = useDraftPanel();
+  const [indicadoresOpen, setIndicadoresOpen] = useState(false);
   const { messages, thinking, thinkingFase, enviar, adjuntar, pendingFiles, quitarArchivo } = useChat(
     (draft: DraftData) => panel.abrir(draft)
   );
@@ -33,7 +36,7 @@ export function ChatApp() {
       <div className={`ChatApp${panel.open ? ' ChatApp--split' : ''}`}>
 
         <div className="ChatApp-chat">
-          <Navbar title="Valtx — Asistente Comercial" />
+          <Navbar title="Valtx — Asistente Comercial" onIndicadores={() => setIndicadoresOpen(true)} />
 
           <MessageList
             messages={messages}
@@ -68,6 +71,10 @@ export function ChatApp() {
         )}
 
       </div>
+
+      {indicadoresOpen && (
+        <IndicadoresPanel onClose={() => setIndicadoresOpen(false)} />
+      )}
     </div>
   );
 }
