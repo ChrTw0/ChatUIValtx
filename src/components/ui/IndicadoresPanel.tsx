@@ -388,15 +388,33 @@ function ModuloContratos() {
 // ─── Módulo 3: Compromisos ────────────────────────────────────────────────────
 
 function ModuloCompromisos() {
-  const [data, setData] = useState<CompromisosData | null>(null);
-  const [err, setErr]   = useState('');
+  const [data, setData]       = useState<CompromisosData | null>(null);
+  const [err, setErr]         = useState('');
+  const [completing, setCompleting] = useState<number | null>(null);
 
-  useEffect(() => {
+  const load = () =>
     apiFetch('/indicadores/compromisos?vencidos_primero=true')
       .then(r => r.json())
       .then(setData)
       .catch(() => setErr('No se pudo cargar compromisos'));
-  }, []);
+
+  useEffect(() => { load(); }, []);
+
+  const completar = async (id: number) => {
+    setCompleting(id);
+    try {
+      await apiFetch(`/indicadores/compromisos/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ estado: 'completado' }),
+      });
+      await load();
+    } catch {
+      setErr('No se pudo completar el item');
+    } finally {
+      setCompleting(null);
+    }
+  };
 
   if (err)   return <ErrorRow msg={err} />;
   if (!data) return <LoadingRow />;
@@ -426,6 +444,14 @@ function ModuloCompromisos() {
                 <span className={`IP-comp-fecha${item.vencido ? ' IP-comp-fecha--vencido' : ''}`}>
                   {fmtFechaLimite(item.fecha_limite)}
                 </span>
+                <button
+                  className="IP-comp-check"
+                  title="Marcar como completado"
+                  disabled={completing === item.id}
+                  onClick={() => completar(item.id)}
+                >
+                  {completing === item.id ? '…' : '✓'}
+                </button>
               </div>
             ))}
           </div>

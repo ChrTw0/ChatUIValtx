@@ -219,7 +219,7 @@
 }
 .IP-comp-items { flex: 1; display: flex; flex-direction: column; gap: 5px; min-width: 0; }
 .IP-comp-item {
-  display: flex; align-items: baseline; gap: 7px;
+  display: flex; align-items: center; gap: 7px;
   padding: 5px 8px; border-radius: 4px;
   background: var(--color-fill-2); border-left: 2px solid transparent;
 }
@@ -235,6 +235,17 @@
 }
 .IP-comp-fecha { font-size: 10px; font-weight: 500; color: var(--color-text-3); flex-shrink: 0; font-variant-numeric: tabular-nums; }
 .IP-comp-fecha--vencido { color: #dc2626; font-weight: 700; }
+.IP-comp-check {
+  flex-shrink: 0; opacity: 0; margin-left: auto;
+  width: 20px; height: 20px; border-radius: 50%;
+  border: 1px solid var(--color-border); background: transparent;
+  color: var(--color-text-3); font-size: 11px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: opacity .15s, background .15s, color .15s;
+}
+.IP-comp-item:hover .IP-comp-check { opacity: 1; }
+.IP-comp-check:hover { background: #16a34a; border-color: #16a34a; color: #fff; }
+.IP-comp-check:disabled { cursor: wait; opacity: .5; }
 
 /* ─── Módulo 4: Actividad ──────────────────────────────────────────────────── */
 
