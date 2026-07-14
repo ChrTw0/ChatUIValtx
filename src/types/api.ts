@@ -32,5 +32,5 @@ export interface DraftData {
   contenido: Record<string, unknown>;
   campos_incompletos: string[];
   moneda?: string;
-  margen_estimado?: number;
+  margen_proyectado?: number;
 }
